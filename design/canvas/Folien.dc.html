@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>WAISS Folienwechsel</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tilt+Warp:XROT,YROT@-45..45,-45..45&amp;family=Tilt+Prism:XROT,YROT@-45..45,-45..45&amp;family=Tilt+Neon:XROT,YROT@-45..45,-45..45&amp;family=Rubik+80s+Fade&amp;family=Rubik+Lines&amp;family=Rubik+Marker+Hatch&amp;family=Zen+Tokyo+Zoo&amp;family=Faster+One&amp;family=Bungee+Shade&amp;family=Bungee+Inline&amp;family=Bungee+Hairline&amp;family=Bungee+Outline&amp;family=Big+Shoulders+Inline:wght@100..900&amp;family=Alumni+Sans+Pinstripe&amp;family=Alumni+Sans+Inline+One&amp;family=Monoton&amp;family=Megrim&amp;family=Tourney:wght@100..900&amp;family=Fascinate+Inline&amp;family=Londrina+Outline&amp;family=Kumar+One+Outline&amp;family=Blaka+Hollow&amp;family=Montserrat+Underline:wght@100..900&amp;family=Libre+Barcode+39+Text&amp;family=Foldit:wght@100..900&amp;family=Rubik+Iso&amp;family=Rubik+Maze&amp;family=Rubik+Doodle+Shadow&amp;family=Codystar&amp;family=Doto:wght@100..900&amp;family=Handjet:wght@100..900&amp;family=Sixtyfour&amp;family=Workbench&amp;family=Datatype:wght@100..900&amp;family=Syne:wght@400..800&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne+Tactile&amp;family=Boldonse&amp;family=Unbounded:wght@200..900&amp;family=Stalinist+One&amp;family=Michroma&amp;family=Syncopate:wght@400;700&amp;family=Krona+One&amp;family=Lexend+Zetta:wght@100..900&amp;family=Monofett&amp;family=Nova+Slim&amp;family=Geostar&amp;family=Zen+Dots&amp;family=Wallpoet&amp;family=Turret+Road:wght@200;800&amp;family=Tektur:wght@400..900&amp;family=Anybody:wdth,wght@50..150,100..900&amp;family=Six+Caps&amp;family=Major+Mono+Display&amp;family=Bricolage+Grotesque:wght@200..800&amp;family=Rubik+Puddles&amp;family=Rubik+Wet+Paint&amp;family=Darumadrop+One&amp;family=Bagel+Fat+One&amp;family=Climate+Crisis&amp;family=Honk&amp;family=Nabla&amp;family=Kablammo&amp;family=Shrikhand&amp;family=Erica+One&amp;family=Gloock&amp;family=Kalnia:wght@100..700&amp;family=Italiana&amp;family=Poiret+One&amp;family=Limelight&amp;family=Bodoni+Moda:opsz,wght@6..96,400..900&amp;display=swap">
+<style>
+body{margin:0}
+.waiss-btn:hover{background:#1F1E1B;color:#F5F3EE}
+.waiss-btn:focus-visible{outline:3px solid #1F1E1B;outline-offset:3px}
+</style>
+</helmet>
+<div style="width: 1920px; height: 1080px; position: relative; overflow: hidden; background: #F5F3EE; color: #1F1E1B; font-family: 'Archivo', sans-serif">
+<div style="position: absolute; left: 0; top: 0; width: 1920px; height: 1080px">
+<dc-import name="Blob" w="1920" h="1080" variant="{{v}}" zoom="{{z}}" shift-x="{{sx}}" shift-y="{{sy}}" bg="transparent" hint-size="1920px,1080px"></dc-import>
+</div>
+<div style="position: absolute; left: 120px; top: 100px; right: 120px; display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 22px; letter-spacing: 0.08em; text-transform: uppercase; color: #66635C">
+<span>WAISS · #1 · AI-Recap Oktober 2026</span>
+<span>{{counter}}</span>
+</div>
+
+<sc-if value="{{s0}}" hint-placeholder-val="{{ true }}">
+<div style="position: absolute; left: 120px; top: 230px; width: 860px; display: flex; flex-direction: column; gap: 40px">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 24px; color: #66635C">Agenda</span>
+<h2 style="margin: 0; font-size: 120px; line-height: 0.95; font-family: {{ff}}; font-style: {{fs}}; font-weight: {{fw}}; font-variation-settings: {{fv}}; background-image: {{hb}}; -webkit-background-clip: {{hclip}}; background-clip: {{hclip}}; color: {{hcol}}; -webkit-text-stroke: {{hst}}; transform: {{sk}}; letter-spacing: {{ls}}">Heute Abend</h2>
+<div style="display: flex; flex-direction: column; gap: 22px; font-size: 40px; font-weight: 500">
+<div style="display: flex; gap: 32px"><span style="font-family: 'IBM Plex Mono', monospace; color: #66635C">01</span><span>AI-Recap des Monats · 20 min</span></div>
+<div style="display: flex; gap: 32px"><span style="font-family: 'IBM Plex Mono', monospace; color: #66635C">02</span><span>Offene Runde &amp; Fragen</span></div>
+<div style="display: flex; gap: 32px"><span style="font-family: 'IBM Plex Mono', monospace; color: #66635C">03</span><span>[Programmpunkt]</span></div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{s1}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; left: 120px; top: 230px; width: 900px; display: flex; flex-direction: column; gap: 40px">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 24px; color: #66635C">01 · Modelle</span>
+<h2 style="margin: 0; font-size: 96px; line-height: 1.0; font-family: {{ff}}; font-style: {{fs}}; font-weight: {{fw}}; font-variation-settings: {{fv}}; background-image: {{hb}}; -webkit-background-clip: {{hclip}}; background-clip: {{hclip}}; color: {{hcol}}; -webkit-text-stroke: {{hst}}; transform: {{sk}}; letter-spacing: {{ls}}">[Schlagzeile des Monats]</h2>
+<div style="display: flex; flex-direction: column; gap: 18px; font-size: 36px">
+<span>[Release / Ankündigung]</span>
+<span>[Release / Ankündigung]</span>
+<span>[Release / Ankündigung]</span>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{s2}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; left: 120px; top: 230px; width: 1000px; display: flex; flex-direction: column; gap: 40px">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 24px; color: #66635C">02 · Tools &amp; Produkte</span>
+<h2 style="margin: 0; font-size: 96px; line-height: 1.0; font-family: {{ff}}; font-style: {{fs}}; font-weight: {{fw}}; font-variation-settings: {{fv}}; background-image: {{hb}}; -webkit-background-clip: {{hclip}}; background-clip: {{hclip}}; color: {{hcol}}; -webkit-text-stroke: {{hst}}; transform: {{sk}}; letter-spacing: {{ls}}">[Was sich im Alltag geändert hat]</h2>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; font-size: 32px">
+<div style="display: flex; flex-direction: column; gap: 10px; border-top: 2px solid #1F1E1B; padding-top: 18px"><strong style="font-weight: 700">[Tool]</strong><span style="color: #66635C">[Ein Satz, warum es zählt]</span></div>
+<div style="display: flex; flex-direction: column; gap: 10px; border-top: 2px solid #1F1E1B; padding-top: 18px"><strong style="font-weight: 700">[Tool]</strong><span style="color: #66635C">[Ein Satz, warum es zählt]</span></div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{s3}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; left: 160px; right: 160px; top: 200px; display: flex; flex-direction: column; align-items: center; gap: 28px; text-align: center">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 24px; color: #66635C">03 · Runde</span>
+<h2 style="margin: 0; font-size: 84px; line-height: 1.02; font-family: {{ff}}; font-style: {{fs}}; font-weight: {{fw}}; font-variation-settings: {{fv}}; background-image: {{hb}}; -webkit-background-clip: {{hclip}}; background-clip: {{hclip}}; color: {{hcol}}; -webkit-text-stroke: {{hst}}; transform: {{sk}}; letter-spacing: {{ls}}">Was hat euch diesen Monat überrascht?</h2>
+</div>
+</sc-if>
+
+<div style="position: absolute; left: 120px; bottom: 100px; display: flex; gap: 16px">
+<button type="button" class="waiss-btn" onClick="{{prev}}" style="min-height: 56px; padding: 0 30px; border-radius: 999px; border: 2px solid #1F1E1B; background: transparent; color: #1F1E1B; font-family: 'IBM Plex Mono', monospace; font-size: 20px; cursor: pointer">← Zurück</button>
+<button type="button" class="waiss-btn" onClick="{{next}}" style="min-height: 56px; padding: 0 30px; border-radius: 999px; border: 2px solid #1F1E1B; background: transparent; color: #1F1E1B; font-family: 'IBM Plex Mono', monospace; font-size: 20px; cursor: pointer">Weiter →</button>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"font":{"editor":"enum","options":["Tilt Warp","Tilt Prism","Tilt Neon","Rubik 80s Fade","Rubik Lines","Rubik Marker Hatch","Zen Tokyo Zoo","Faster One","Bungee Shade","Bungee Inline","Bungee Hairline","Bungee Outline","Big Shoulders Inline","Alumni Sans Pinstripe","Alumni Sans Inline One","Monoton","Megrim","Tourney","Fascinate Inline","Londrina Outline","Kumar One Outline","Blaka Hollow","Montserrat Underline","Libre Barcode 39 Text","Foldit","Rubik Iso","Rubik Maze","Rubik Doodle Shadow","Codystar","Doto","Handjet","Sixtyfour","Workbench","Datatype","Syne","Syne Tactile","Boldonse","Unbounded","Stalinist One","Michroma","Syncopate","Krona One","Lexend Zetta","Monofett","Nova Slim","Geostar","Zen Dots","Wallpoet","Turret Road","Tektur","Anybody","Six Caps","Major Mono Display","Bricolage Grotesque","Rubik Puddles","Rubik Wet Paint","Darumadrop One","Bagel Fat One","Climate Crisis","Honk","Nabla","Kablammo","Shrikhand","Erica One","Gloock","Kalnia","Italiana","Poiret One","Limelight","Bodoni Moda"],"default":"Tektur","section":"Schrift"},"rotMode":{"editor":"enum","options":["Auto","CSS 3D","Aus"],"default":"Auto","section":"Rotation"},"rotX":{"editor":"range","default":0,"min":-60,"max":60,"step":1,"unit":"°","section":"Rotation"},"rotY":{"editor":"range","default":0,"min":-60,"max":60,"step":1,"unit":"°","section":"Rotation"},"skew":{"editor":"range","default":0,"min":-40,"max":40,"step":1,"unit":"°","section":"Rotation"},"stretch":{"editor":"range","default":1.18,"min":0.8,"max":1.8,"step":0.01,"section":"Ausrichtung"},"tracking":{"editor":"range","default":0,"min":-0.2,"max":0.3,"step":0.005,"unit":"em","section":"Ausrichtung"},"diag":{"editor":"range","default":0.7,"min":0.2,"max":1.2,"step":0.01,"unit":"em","section":"Ausrichtung"},"lineH":{"editor":"range","default":0.84,"min":0.5,"max":1.3,"step":0.01,"section":"Ausrichtung"},"l1x":{"editor":"range","default":0,"min":-90,"max":90,"step":1,"unit":"°","section":"Buchstabe 1 (W)"},"l1y":{"editor":"range","default":0,"min":-90,"max":90,"step":1,"unit":"°","section":"Buchstabe 1 (W)"},"l1z":{"editor":"range","default":0,"min":-180,"max":180,"step":1,"unit":"°","section":"Buchstabe 1 (W)"},"l2x":{"editor":"range","default":0,"min":-90,"max":90,"step":1,"unit":"°","section":"Buchstabe 2 (A)"},"l2y":{"editor":"range","default":0,"min":-90,"max":90,"step":1,"unit":"°","section":"Buchstabe 2 (A)"},"l2z":{"editor":"range","default":0,"min":-180,"max":180,"step":1,"unit":"°","section":"Buchstabe 2 (A)"},"l3x":{"editor":"range","default":0,"min":-90,"max":90,"step":1,"unit":"°","section":"Buchstabe 3 (I)"},"l3y":{"editor":"range","default":0,"min":-90,"max":90,"step":1,"unit":"°","section":"Buchstabe 3 (I)"},"l3z":{"editor":"range","default":0,"min":-180,"max":180,"step":1,"unit":"°","section":"Buchstabe 3 (I)"},"l4x":{"editor":"range","default":0,"min":-90,"max":90,"step":1,"unit":"°","section":"Buchstabe 4 (S)"},"l4y":{"editor":"range","default":0,"min":-90,"max":90,"step":1,"unit":"°","section":"Buchstabe 4 (S)"},"l4z":{"editor":"range","default":0,"min":-180,"max":180,"step":1,"unit":"°","section":"Buchstabe 4 (S)"},"l5x":{"editor":"range","default":0,"min":-90,"max":90,"step":1,"unit":"°","section":"Buchstabe 5 (S)"},"l5y":{"editor":"range","default":0,"min":-90,"max":90,"step":1,"unit":"°","section":"Buchstabe 5 (S)"},"l5z":{"editor":"range","default":0,"min":-180,"max":180,"step":1,"unit":"°","section":"Buchstabe 5 (S)"},"hatch":{"editor":"boolean","default":false,"section":"Schraffur"},"hatchAngle":{"editor":"range","default":39,"min":-90,"max":90,"step":1,"unit":"°","section":"Schraffur"},"hatchGap":{"editor":"range","default":9,"min":3,"max":24,"step":1,"unit":"px","section":"Schraffur"},"hatchWidth":{"editor":"range","default":3,"min":1,"max":10,"step":0.5,"unit":"px","section":"Schraffur"},"$preview":{"width":1920,"height":1080}}'>
+class Component extends DCLogic {
+  state = { i: 0 };
+  renderVals() {
+    // per slide: blob variant, zoom, shiftX, shiftY
+    const cams = [[0, 1.1, 0.62, 0.0], [1, 1.8, 0.85, -0.35], [2, 0.7, 0.6, 0.18], [3, 1.3, 0.0, -0.5]];
+    const n = cams.length;
+    const i = (this.state && this.state.i) || 0;
+    const c = cams[i];
+    const p = this.props; const INK = '#1F1E1B'; const F = { 'Tilt Warp': ["'Tilt Warp', sans-serif", 400, true], 'Tilt Prism': ["'Tilt Prism', sans-serif", 400, true], 'Tilt Neon': ["'Tilt Neon', sans-serif", 400, true], 'Rubik 80s Fade': ["'Rubik 80s Fade', sans-serif", 400, false], 'Rubik Lines': ["'Rubik Lines', sans-serif", 400, false], 'Rubik Marker Hatch': ["'Rubik Marker Hatch', sans-serif", 400, false], 'Zen Tokyo Zoo': ["'Zen Tokyo Zoo', sans-serif", 400, false], 'Faster One': ["'Faster One', sans-serif", 400, false], 'Bungee Shade': ["'Bungee Shade', sans-serif", 400, false], 'Bungee Inline': ["'Bungee Inline', sans-serif", 400, false], 'Bungee Hairline': ["'Bungee Hairline', sans-serif", 400, false], 'Bungee Outline': ["'Bungee Outline', sans-serif", 400, false], 'Big Shoulders Inline': ["'Big Shoulders Inline', sans-serif", 900, false], 'Alumni Sans Pinstripe': ["'Alumni Sans Pinstripe', sans-serif", 400, false], 'Alumni Sans Inline One': ["'Alumni Sans Inline One', sans-serif", 400, false], 'Monoton': ["'Monoton', sans-serif", 400, false], 'Megrim': ["'Megrim', sans-serif", 400, false], 'Tourney': ["'Tourney', sans-serif", 200, false], 'Fascinate Inline': ["'Fascinate Inline', sans-serif", 400, false], 'Londrina Outline': ["'Londrina Outline', sans-serif", 400, false], 'Kumar One Outline': ["'Kumar One Outline', sans-serif", 400, false], 'Blaka Hollow': ["'Blaka Hollow', sans-serif", 400, false], 'Montserrat Underline': ["'Montserrat Underline', sans-serif", 700, false], 'Libre Barcode 39 Text': ["'Libre Barcode 39 Text', sans-serif", 400, false], 'Foldit': ["'Foldit', sans-serif", 700, false], 'Rubik Iso': ["'Rubik Iso', sans-serif", 400, false], 'Rubik Maze': ["'Rubik Maze', sans-serif", 400, false], 'Rubik Doodle Shadow': ["'Rubik Doodle Shadow', sans-serif", 400, false], 'Codystar': ["'Codystar', sans-serif", 400, false], 'Doto': ["'Doto', sans-serif", 700, false], 'Handjet': ["'Handjet', sans-serif", 500, false], 'Sixtyfour': ["'Sixtyfour', sans-serif", 400, false], 'Workbench': ["'Workbench', sans-serif", 400, false], 'Datatype': ["'Datatype', sans-serif", 600, false], 'Syne': ["'Syne', sans-serif", 800, false], 'Syne Tactile': ["'Syne Tactile', sans-serif", 400, false], 'Boldonse': ["'Boldonse', sans-serif", 400, false], 'Unbounded': ["'Unbounded', sans-serif", 300, false], 'Stalinist One': ["'Stalinist One', sans-serif", 400, false], 'Michroma': ["'Michroma', sans-serif", 400, false], 'Syncopate': ["'Syncopate', sans-serif", 700, false], 'Krona One': ["'Krona One', sans-serif", 400, false], 'Lexend Zetta': ["'Lexend Zetta', sans-serif", 200, false], 'Monofett': ["'Monofett', sans-serif", 400, false], 'Nova Slim': ["'Nova Slim', sans-serif", 400, false], 'Geostar': ["'Geostar', sans-serif", 400, false], 'Zen Dots': ["'Zen Dots', sans-serif", 400, false], 'Wallpoet': ["'Wallpoet', sans-serif", 400, false], 'Turret Road': ["'Turret Road', sans-serif", 200, false], 'Tektur': ["'Tektur', sans-serif", 800, false], 'Anybody': ["'Anybody', sans-serif", 900, false], 'Six Caps': ["'Six Caps', sans-serif", 400, false], 'Major Mono Display': ["'Major Mono Display', sans-serif", 400, false], 'Bricolage Grotesque': ["'Bricolage Grotesque', sans-serif", 800, false], 'Rubik Puddles': ["'Rubik Puddles', sans-serif", 400, false], 'Rubik Wet Paint': ["'Rubik Wet Paint', sans-serif", 400, false], 'Darumadrop One': ["'Darumadrop One', sans-serif", 400, false], 'Bagel Fat One': ["'Bagel Fat One', sans-serif", 400, false], 'Climate Crisis': ["'Climate Crisis', sans-serif", 400, false], 'Honk': ["'Honk', sans-serif", 400, false], 'Nabla': ["'Nabla', sans-serif", 400, false], 'Kablammo': ["'Kablammo', sans-serif", 400, false], 'Shrikhand': ["'Shrikhand', sans-serif", 400, false], 'Erica One': ["'Erica One', sans-serif", 400, false], 'Gloock': ["'Gloock', sans-serif", 400, false], 'Kalnia': ["'Kalnia', sans-serif", 700, false], 'Italiana': ["'Italiana', sans-serif", 400, false], 'Poiret One': ["'Poiret One', sans-serif", 400, false], 'Limelight': ["'Limelight', sans-serif", 400, false], 'Bodoni Moda': ["'Bodoni Moda', sans-serif", 500, false] }; const f = F[p.font] || F['Tektur']; const gx = Number(p.rotX ?? 0), gy = Number(p.rotY ?? 0); const mode = p.rotMode ?? 'Auto'; const useAxes = f[2] && mode === 'Auto'; const css3d = mode === 'CSS 3D' || (mode === 'Auto' && !f[2]); const clamp = (v) => Math.max(-45, Math.min(45, v)); const st = Number(p.stretch ?? 1.18), ce = Number(p.cell ?? 0.78), dg = Number(p.diag ?? 0.7), lh = Number(p.lineH ?? 0.84); const L = [1, 2, 3, 4, 5].map((i) => { const x = Number(p['l' + i + 'x'] ?? 0), y = Number(p['l' + i + 'y'] ?? 0), z = Number(p['l' + i + 'z'] ?? 0); return { v: useAxes ? "'XROT' " + clamp(gx + x) + ", 'YROT' " + clamp(gy + y) : 'normal', t: (css3d ? 'perspective(900px) rotateX(' + (gx + x) + 'deg) rotateY(' + (gy + y) + 'deg) ' : '') + 'rotateZ(' + z + 'deg) scaleY(' + st + ')' }; }); const hatch = !!p.hatch; const ha = p.hatchAngle ?? 39; const hg = p.hatchGap ?? 9; const hw = p.hatchWidth ?? 3; const wm = { ff: f[0], fs: 'normal', fw: f[1], fv: useAxes ? "'XROT' " + clamp(gx) + ", 'YROT' " + clamp(gy) : 'normal', hb: hatch ? 'repeating-linear-gradient(' + ha + 'deg, ' + INK + ' 0px, ' + INK + ' ' + hw + 'px, transparent ' + hw + 'px, transparent ' + (hw + hg) + 'px)' : 'none', hclip: hatch ? 'text' : 'border-box', hcol: hatch ? 'transparent' : INK, hst: hatch ? '2px ' + INK : '0px transparent', sk: 'skewX(' + (p.skew ?? 0) + 'deg)', l1t: L[0].t, l1v: L[0].v, l2t: L[1].t, l2v: L[1].v, l3t: L[2].t, l3v: L[2].v, l4t: L[3].t, l4v: L[3].v, l5t: L[4].t, l5v: L[4].v, cw: 'auto', ls: Number(p.tracking ?? 0) + 'em', lh: lh, o2: dg + 'em', o3: (2 * dg) + 'em', o4: (3 * dg) + 'em', o5: (4 * dg) + 'em' };
+    return {
+      ...wm,
+      v: c[0], z: c[1], sx: c[2], sy: c[3],
+      s0: i === 0, s1: i === 1, s2: i === 2, s3: i === 3,
+      counter: '0' + (i + 1) + ' / 0' + n,
+      next: () => this.setState({ i: (i + 1) % n }),
+      prev: () => this.setState({ i: (i + n - 1) % n })
+    };
+  }
+}
+</script>
+</body>
+</html>

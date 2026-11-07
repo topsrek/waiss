@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>WAISS Objekt</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: {{w}}px; height: {{h}}px; position: relative; overflow: hidden; background: {{bg}}">
+<canvas ref="{{setCanvas}}" role="img" aria-label="Schwebendes, weißes, zähflüssiges Objekt aus unregelmäßig ineinanderfließenden Kugeln" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block"></canvas>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"w":{"editor":"int","default":1080,"min":40,"max":8000,"section":"Format"},"h":{"editor":"int","default":1080,"min":40,"max":8000,"section":"Format"},"variant":{"editor":"int","default":0,"min":0,"max":3,"section":"Objekt"},"zoom":{"editor":"range","default":0.8,"min":0.3,"max":3,"step":0.01,"section":"Kamera"},"shiftX":{"editor":"range","default":0,"min":-1.5,"max":1.5,"step":0.01,"section":"Kamera"},"shiftY":{"editor":"range","default":0,"min":-1.2,"max":1.2,"step":0.01,"section":"Kamera"},"rotOffset":{"editor":"range","default":0,"min":-180,"max":180,"step":1,"unit":"°","section":"Objekt"},"spiky":{"editor":"range","default":0.8,"min":0,"max":1.5,"step":0.01,"section":"Objekt"},"shine":{"editor":"range","default":0.8,"min":0,"max":1,"step":0.01,"section":"Objekt"},"bg":{"editor":"color","default":"#F5F3EE","options":["#F5F3EE","#FAF9F6","#EFECE5"]},"$preview":{"width":1080,"height":1080}}'>
+class Component extends DCLogic {
+  setCanvas = (el) => {
+    if (el && el !== this.cv) { this.cv = el; this.gl = null; this.boot(); }
+  };
+
+  configs() {
+    // 8 blobs each: x, y, z, radius — floating, centred on the origin, deliberately irregular.
+    return [
+      { ph: 0.0, rot: 0.0, b: [0, 0, 0, 0.62,  0.55, 0.35, -0.2, 0.42,  -0.48, 0.42, 0.15, 0.36,  0.15, -0.55, 0.25, 0.34,  -0.7, -0.25, -0.3, 0.28,  0.85, -0.15, 0.3, 0.22,  0.3, 0.85, 0.1, 0.2,  -0.2, -0.9, -0.35, 0.16] },
+      { ph: 1.7, rot: 1.1, b: [-0.1, 0.1, 0, 0.58,  0.7, -0.1, 0.1, 0.4,  -0.6, 0.55, -0.2, 0.38,  0.2, 0.7, 0.35, 0.26,  -0.35, -0.6, 0.3, 0.3,  0.5, -0.65, -0.3, 0.24,  1.1, 0.35, -0.1, 0.18,  -1.0, 0.0, 0.25, 0.2] },
+      { ph: 3.1, rot: 2.3, b: [0.1, -0.05, 0, 0.6,  -0.6, -0.3, 0.2, 0.44,  0.45, 0.5, -0.25, 0.36,  -0.15, 0.65, 0.3, 0.3,  0.85, -0.4, 0.1, 0.26,  -1.05, 0.3, -0.2, 0.22,  0.25, -0.8, -0.2, 0.24,  0.0, 1.05, -0.1, 0.15] },
+      { ph: 4.6, rot: 3.6, b: [0, 0.05, 0, 0.55,  0.4, -0.45, 0.25, 0.42,  -0.5, -0.15, -0.25, 0.4,  -0.25, 0.6, 0.15, 0.34,  0.65, 0.45, -0.2, 0.28,  -0.9, 0.55, 0.2, 0.18,  0.9, -0.05, 0.35, 0.22,  -0.4, -0.85, 0.1, 0.2] }
+    ];
+  }
+
+  num(v, d) { const n = parseFloat(v); return isFinite(n) ? n : d; }
+
+  dims() {
+    return {
+      w: Math.max(40, Math.round(this.num(this.props.w, 1080))),
+      h: Math.max(40, Math.round(this.num(this.props.h, 1080)))
+    };
+  }
+
+  target() {
+    const cs = this.configs();
+    const n = cs.length;
+    const v = ((Math.round(this.num(this.props.variant, 0)) % n) + n) % n;
+    const c = cs[v];
+    return {
+      b: c.b.slice(),
+      ph: c.ph,
+      rot: c.rot + this.num(this.props.rotOffset, 0) * Math.PI / 180,
+      cam: [this.num(this.props.zoom, 0.8), this.num(this.props.shiftX, 0), this.num(this.props.shiftY, 0)]
+    };
+  }
+
+  key() {
+    const p = this.props;
+    return [p.variant, p.zoom, p.shiftX, p.shiftY, p.w, p.h, p.shine, p.spiky, p.rotOffset].join('|');
+  }
+
+  componentDidMount() { this.boot(); }
+
+  componentDidUpdate() {
+    if (!this.gl) { this.boot(); return; }
+    const k = this.key();
+    if (k !== this.lastKey) { this.lastKey = k; this.goTo(this.target()); }
+  }
+
+  componentWillUnmount() {
+    this.dead = true;
+    cancelAnimationFrame(this.raf);
+    const gl = this.gl;
+    if (gl) { const ext = gl.getExtension('WEBGL_lose_context'); if (ext) ext.loseContext(); }
+    this.gl = null;
+  }
+
+  boot() {
+    if (!this.cv || this.gl || this.dead) return;
+    const gl = this.cv.getContext('webgl', { alpha: true, premultipliedAlpha: true, antialias: false, preserveDrawingBuffer: true });
+    if (!gl) return;
+    const vs = 'attribute vec2 a;void main(){gl_Position=vec4(a,0.0,1.0);}';
+    const fs = `
+precision highp float;
+uniform vec2 uRes;
+uniform vec4 uB[8];
+uniform float uWarp;
+uniform float uPhase;
+uniform float uRot;
+uniform vec3 uCam;
+uniform float uShine;
+uniform float uSpike;
+
+float smin(float a, float b, float k){ float h = max(k - abs(a - b), 0.0) / k; return min(a, b) - h * h * k * 0.25; }
+
+vec3 orient(vec3 p){
+  float c = cos(uRot), s = sin(uRot);
+  p = vec3(c * p.x + s * p.z, p.y, -s * p.x + c * p.z);
+  float c2 = cos(0.35), s2 = sin(0.35);
+  p = vec3(p.x, c2 * p.y - s2 * p.z, s2 * p.y + c2 * p.z);
+  return p;
+}
+
+float sdRoundCone(vec3 p, vec3 a, vec3 b, float r1, float r2){
+  vec3 ba = b - a; float l2 = dot(ba, ba); float rr = r1 - r2; float a2 = l2 - rr * rr; float il2 = 1.0 / l2;
+  vec3 pa = p - a; float y = dot(pa, ba); float z = y - l2;
+  vec3 xv = pa * l2 - ba * y; float x2 = dot(xv, xv); float y2 = y * y * l2; float z2 = z * z * l2;
+  float k = sign(rr) * rr * rr * x2;
+  if (sign(z) * a2 * z2 > k) return sqrt(x2 + z2) * il2 - r2;
+  if (sign(y) * a2 * y2 < k) return sqrt(x2 + y2) * il2 - r1;
+  return (sqrt(x2 * a2 * il2) + y * rr) * il2 - r1;
+}
+
+vec3 unorient(vec3 p){
+  float c2 = cos(0.35), s2 = sin(0.35);
+  p = vec3(p.x, c2 * p.y + s2 * p.z, -s2 * p.y + c2 * p.z);
+  float c = cos(uRot), s = sin(uRot);
+  return vec3(c * p.x - s * p.z, p.y, s * p.x + c * p.z);
+}
+
+float spike(vec3 q, vec3 dir, float len, float r){
+  vec3 n = normalize(dir);
+  float facing = dot(unorient(n), normalize(vec3(0.0, 0.35, 4.6)));
+  float k = 1.0 - smoothstep(0.42, 0.78, facing);
+  return sdRoundCone(q, n * 0.25, n * mix(0.55, 1.08 + 0.32 * len * uSpike, k), r * 1.15 * mix(0.7, 1.0, k), 0.005);
+}
+
+float map(vec3 p){
+  vec3 q = orient(p);
+  q += uWarp * sin(q.yzx * 2.1 + vec3(uPhase, uPhase * 0.7, uPhase * 1.3));
+  q += uWarp * 0.5 * sin(q.zxy * 4.3 - vec3(uPhase * 1.1, uPhase * 0.5, uPhase * 0.9));
+  float d = 1e5;
+  for (int i = 0; i < 8; i++) { d = smin(d, length(q - uB[i].xyz) - uB[i].w, 0.44); }
+  if (uSpike > 0.001) {
+    float s = 1e5;
+    s = smin(s, spike(q, vec3(0.371, 0.929, 0.000), 0.65, 0.20), 0.18);
+    s = smin(s, spike(q, vec3(-0.456, 0.786, 0.418), 0.80, 0.18), 0.18);
+    s = smin(s, spike(q, vec3(0.067, 0.643, -0.763), 0.35, 0.19), 0.18);
+    s = smin(s, spike(q, vec3(0.527, 0.500, 0.687), 0.35, 0.17), 0.18);
+    s = smin(s, spike(q, vec3(-0.920, 0.357, -0.163), 0.35, 0.20), 0.18);
+    s = smin(s, spike(q, vec3(0.824, 0.214, -0.524), 0.50, 0.15), 0.18);
+    s = smin(s, spike(q, vec3(-0.259, 0.071, 0.963), 0.80, 0.17), 0.18);
+    s = smin(s, spike(q, vec3(-0.460, -0.071, -0.885), 0.50, 0.15), 0.18);
+    s = smin(s, spike(q, vec3(0.918, -0.214, 0.335), 0.80, 0.15), 0.18);
+    s = smin(s, spike(q, vec3(-0.863, -0.357, 0.356), 0.95, 0.16), 0.18);
+    s = smin(s, spike(q, vec3(0.367, -0.500, -0.784), 0.50, 0.18), 0.18);
+    s = smin(s, spike(q, vec3(0.229, -0.643, 0.731), 0.95, 0.20), 0.18);
+    s = smin(s, spike(q, vec3(-0.535, -0.786, -0.310), 0.95, 0.18), 0.18);
+    s = smin(s, spike(q, vec3(0.362, -0.929, -0.080), 0.35, 0.20), 0.18);
+    d = smin(d, s, 0.22);
+  }
+  return d;
+}
+
+float blobOnly(vec3 p){
+  vec3 q = orient(p);
+  q += uWarp * sin(q.yzx * 2.1 + vec3(uPhase, uPhase * 0.7, uPhase * 1.3));
+  q += uWarp * 0.5 * sin(q.zxy * 4.3 - vec3(uPhase * 1.1, uPhase * 0.5, uPhase * 0.9));
+  float d = 1e5;
+  for (int i = 0; i < 8; i++) { d = smin(d, length(q - uB[i].xyz) - uB[i].w, 0.44); }
+  return d;
+}
+
+vec3 nrm(vec3 p){
+  const vec2 e = vec2(0.0015, -0.0015);
+  return normalize(e.xyy * map(p + e.xyy) + e.yyx * map(p + e.yyx) + e.yxy * map(p + e.yxy) + e.xxx * map(p + e.xxx));
+}
+
+float shadow(vec3 ro, vec3 rd){
+  float r = 1.0; float t = 0.02;
+  for (int i = 0; i < 48; i++) {
+    float h = map(ro + rd * t);
+    r = min(r, 8.0 * h / t);
+    t += clamp(h * 0.8, 0.015, 0.25);
+    if (r < 0.001 || t > 5.0) break;
+  }
+  r = clamp(r, 0.0, 1.0);
+  return r * r * (3.0 - 2.0 * r);
+}
+
+float ao(vec3 p, vec3 n){
+  float o = 0.0; float s = 1.0;
+  for (int i = 1; i <= 5; i++) {
+    float h = 0.01 + 0.03 * float(i * i);
+    o += (h - map(p + n * h)) * s;
+    s *= 0.7;
+  }
+  return clamp(1.0 - 1.4 * o, 0.0, 1.0);
+}
+
+void main(){
+  vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y;
+  uv = (uv - uCam.yz) / uCam.x;
+  const float F = 2.2;
+  vec3 ro = vec3(0.0, 0.35, 4.6);
+  vec3 ta = vec3(0.0, 0.0, 0.0);
+  vec3 ww = normalize(ta - ro);
+  vec3 uu = normalize(cross(ww, vec3(0.0, 1.0, 0.0)));
+  vec3 vv = cross(uu, ww);
+  vec3 rd = normalize(uv.x * uu + uv.y * vv + F * ww);
+  float px = 1.0 / (uRes.y * uCam.x * F);
+
+  float t = 0.0; bool hit = false;
+  float bestR = 1e5; float bestT = 0.0;
+  for (int i = 0; i < 140; i++) {
+    vec3 p = ro + rd * t;
+    float d = map(p);
+    float r = d / max(t, 0.001);
+    if (r < bestR && t > 1.0) { bestR = r; bestT = t; }
+    if (d < 0.0006 * t) { hit = true; bestT = t; break; }
+    t += d * 0.7;
+    if (t > 12.0) break;
+  }
+
+  float a = hit ? 1.0 : 1.0 - smoothstep(0.0, 1.6 * px, bestR);
+  vec4 outc = vec4(0.0);
+  if (a > 0.0) {
+    vec3 p = ro + rd * bestT;
+    vec3 n = nrm(p);
+    vec3 l = normalize(vec3(-0.6, 0.75, 0.45));
+    vec3 f = normalize(vec3(0.75, -0.05, 0.6));
+    float sh = shadow(p + n * 0.012, l);
+    float oc = ao(p, n);
+    vec3 alb = vec3(1.0, 0.997, 0.99);
+    float wrap = clamp((dot(n, l) + 0.45) / 1.45, 0.0, 1.0);
+    float fil = clamp((dot(n, f) + 0.3) / 1.3, 0.0, 1.0);
+    float sky = 0.5 + 0.5 * n.y;
+    float bou = clamp(0.5 - 0.5 * n.y, 0.0, 1.0);
+    vec3 col = alb * (0.70 * wrap * mix(0.74, 1.0, sh) * vec3(1.0, 0.99, 0.975)
+                    + 0.20 * fil * vec3(0.97, 0.975, 0.985)
+                    + 0.34 * sky * oc
+                    + 0.20 * bou * oc * vec3(1.0, 0.985, 0.965));
+    col *= mix(0.88, 1.0, oc);
+    vec3 hv = normalize(l - rd);
+    float fr = pow(clamp(1.0 + dot(n, rd), 0.0, 1.0), 4.0);
+    col = mix(col, col * vec3(0.93, 0.925, 0.915), fr * 0.3 * (1.0 - uShine));
+    vec3 rf = reflect(rd, n);
+    float ry = clamp(rf.y * 0.5 + 0.5, 0.0, 1.0);
+    vec3 env = mix(vec3(0.62, 0.61, 0.59), vec3(1.02, 1.01, 0.99), smoothstep(0.25, 0.85, ry));
+    env += 1.5 * smoothstep(0.80, 0.93, dot(rf, normalize(vec3(-0.65, 0.65, 0.40))));
+    env += 0.9 * smoothstep(0.88, 0.96, dot(rf, normalize(vec3(0.85, 0.25, 0.45))));
+    env += 0.5 * smoothstep(0.90, 0.99, dot(rf, normalize(vec3(0.10, 0.20, 1.0))));
+    float rsh = shadow(p + n * 0.02, rf);
+    float fre = 0.05 + 0.95 * pow(1.0 - clamp(dot(n, -rd), 0.0, 1.0), 5.0);
+    col = mix(col, env * mix(0.55, 1.0, rsh) * mix(0.8, 1.0, oc), clamp(fre * 0.85 + 0.12, 0.0, 1.0) * uShine);
+    col += (0.10 + 0.9 * uShine) * pow(clamp(dot(n, hv), 0.0, 1.0), mix(36.0, 220.0, uShine)) * sh;
+    col = col * (1.0 + col / 1.3) / (1.0 + col);
+    col = clamp(col * 1.16, 0.0, 1.0);
+    float tip = smoothstep(0.03, 0.42, blobOnly(p)) * step(0.001, uSpike);
+    col = mix(col, col * vec3(0.30, 0.295, 0.29), tip * 0.85);
+    outc = vec4(col * a, a);
+  }
+  float dn = (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) / 255.0;
+  outc.rgb += dn * outc.a;
+  gl_FragColor = outc;
+}`;
+    const mk = (type, src) => {
+      const s = gl.createShader(type);
+      gl.shaderSource(s, src);
+      gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.warn('[WAISS]', gl.getShaderInfoLog(s));
+      return s;
+    };
+    const pr = gl.createProgram();
+    gl.attachShader(pr, mk(gl.VERTEX_SHADER, vs));
+    gl.attachShader(pr, mk(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(pr);
+    if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) { console.warn('[WAISS]', gl.getProgramInfoLog(pr)); return; }
+    gl.useProgram(pr);
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(pr, 'a');
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    this.u = {
+      res: gl.getUniformLocation(pr, 'uRes'),
+      b: gl.getUniformLocation(pr, 'uB[0]'),
+      warp: gl.getUniformLocation(pr, 'uWarp'),
+      ph: gl.getUniformLocation(pr, 'uPhase'),
+      rot: gl.getUniformLocation(pr, 'uRot'),
+      cam: gl.getUniformLocation(pr, 'uCam'),
+      shine: gl.getUniformLocation(pr, 'uShine'),
+      spike: gl.getUniformLocation(pr, 'uSpike')
+    };
+    this.gl = gl;
+    this.cur = this.target();
+    this.lastKey = this.key();
+    this.draw(this.cur, this.cur.ph, 0.05, 1);
+  }
+
+  draw(s, ph, warp, q) {
+    const gl = this.gl;
+    if (!gl || !this.cv) return;
+    const d = this.dims();
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    const cap = Math.sqrt(2400000 / (d.w * d.h));
+    const sc = Math.min(dpr, cap) * q;
+    const W = Math.max(1, Math.round(d.w * sc));
+    const H = Math.max(1, Math.round(d.h * sc));
+    if (this.cv.width !== W || this.cv.height !== H) { this.cv.width = W; this.cv.height = H; }
+    gl.viewport(0, 0, W, H);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.uniform2f(this.u.res, W, H);
+    gl.uniform4fv(this.u.b, new Float32Array(s.b));
+    gl.uniform1f(this.u.warp, warp);
+    gl.uniform1f(this.u.ph, ph);
+    gl.uniform1f(this.u.rot, s.rot);
+    gl.uniform3f(this.u.cam, s.cam[0], s.cam[1], s.cam[2]);
+    gl.uniform1f(this.u.spike, Math.max(0, Math.min(1.5, this.num(this.props.spiky, 0.8))));
+    gl.uniform1f(this.u.shine, Math.max(0, Math.min(1, this.num(this.props.shine, 0.8))));
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+
+  goTo(goal) {
+    cancelAnimationFrame(this.raf);
+    const from = this.cur || goal;
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { this.cur = goal; this.draw(goal, goal.ph, 0.05, 1); return; }
+    const t0 = performance.now();
+    const dur = 1700;
+    const lerp = (a, b, e) => a + (b - a) * e;
+    const step = (now) => {
+      if (this.dead) return;
+      const k = Math.min(1, (now - t0) / dur);
+      const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+      const s = {
+        b: from.b.map((v, i) => lerp(v, goal.b[i], e)),
+        ph: lerp(from.ph, goal.ph, e),
+        rot: lerp(from.rot, goal.rot, e),
+        cam: from.cam.map((v, i) => lerp(v, goal.cam[i], e))
+      };
+      this.cur = s;
+      const warp = 0.05 + 0.11 * Math.sin(Math.PI * k) + 0.025 * Math.sin(k * 20.0) * (1 - k);
+      const ph = s.ph + 0.9 * Math.sin(Math.PI * k);
+      this.draw(s, ph, warp, k < 1 ? 0.5 : 1);
+      if (k < 1) this.raf = requestAnimationFrame(step);
+      else this.cur = goal;
+    };
+    this.raf = requestAnimationFrame(step);
+  }
+
+  renderVals() {
+    const d = this.dims();
+    return { w: d.w, h: d.h, bg: this.props.bg ?? '#F5F3EE', setCanvas: this.setCanvas };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Blob.dc.html": {
+      "h": 1080,
+      "title": "Objekt · schwebend (WebGL)",
+      "w": 1080,
+      "x": 0,
+      "y": 0
+    },
+    "FlyerA.dc.html": {
+      "h": 1350,
+      "title": "Flyer A · Diagonal",
+      "w": 1080,
+      "x": 0,
+      "y": 1500
+    },
+    "Folien.dc.html": {
+      "h": 1080,
+      "is_interactive": true,
+      "title": "Folien · Wechsel (klicken)",
+      "w": 1920,
+      "x": 3160,
+      "y": 0
+    },
+    "Luma.dc.html": {
+      "h": 1080,
+      "title": "Luma-Cover · Diagonal",
+      "w": 1080,
+      "x": 1160,
+      "y": 1500
+    },
+    "Main.dc.html": {
+      "h": 1080,
+      "title": "Folie · Titel (eine Zeile)",
+      "w": 1920,
+      "x": 1160,
+      "y": 0
+    },
+    "Schriften.dc.html": {
+      "h": 3476,
+      "title": "Schriftproben (70)",
+      "w": 1920,
+      "x": 3560,
+      "y": 1500
+    },
+    "Steuerpult.dc.html": {
+      "x": 1,
+      "y": -1900,
+      "w": 2602,
+      "h": 1480,
+      "title": "Steuerpult · Buchstaben drehen, Schrift mit ← →",
+      "is_interactive": true
+    },
+    "Wortmarke.dc.html": {
+      "x": 5240,
+      "y": -1900,
+      "w": 1920,
+      "h": 6900,
+      "title": "Wortmarke · eigene Entwürfe (SVG)"
+    },
+    "Txt.dc.html": {
+      "x": 5240,
+      "y": 5200,
+      "w": 560,
+      "h": 60,
+      "title": "Secession-Text (Baustein)"
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-11-01T12:49:34.309Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "t1": {
+      "kind": "title1",
+      "maxW": 5080,
+      "text": "WAISS — Objekt & Präsentation",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "t2": {
+      "kind": "title1",
+      "maxW": 3400,
+      "text": "Flyer & Luma",
+      "w": 240,
+      "x": 0,
+      "y": 1200
+    },
+    "t0": {
+      "kind": "title1",
+      "maxW": 2602,
+      "text": "Steuerpult — alle Formate gleichzeitig",
+      "x": 0,
+      "y": -2200
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Blob.dc.html",
+    "Folien.dc.html",
+    "FlyerA.dc.html",
+    "Luma.dc.html",
+    "Schriften.dc.html",
+    "Steuerpult.dc.html",
+    "Wortmarke.dc.html",
+    "Txt.dc.html"
+  ],
+  "pages": [],
+  "title": "WAISS – Wiener AI Software Stammtisch",
+  "noteOrder": [
+    "t1",
+    "t2",
+    "t0"
+  ]
+}

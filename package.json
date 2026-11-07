@@ -1,0 +1,12 @@
+{
+  "name": "waiss",
+  "private": true,
+  "description": "WAISS – Wiener AI Software Stammtisch: branding, blob, flyers, slides",
+  "scripts": {
+    "render": "python3 tools/render.py",
+    "shots": "node tools/screenshot.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.48.0"
+  }
+}

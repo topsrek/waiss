@@ -21,7 +21,7 @@ assets/logo/     Telos Circle logo (column, wordmark, "by" lockup) as clean SVGs
 editions/        One JSON per meetup (edition, date, time, venue, sign-up link)
 texts/           Announcement texts per edition (WhatsApp DE/EN, Luma)
 exports/         Rendered PNGs per edition
-tools/           render.py + screenshot.js – turn the canvas files into static HTML and PNGs
+tools/           render.py + screenshot.js – flyers; deck.py + export-deck.js – the slide deck
 docs/brand.md    Colors, wordmark, blob parameters, layout rules
 ```
 
@@ -39,6 +39,14 @@ node tools/screenshot.js build/002 exports/002 2      # -> @2x PNGs
 The `.dc.html` files use the design canvas' template syntax (`{{holes}}`, `<dc-import>`,
 `data-props`). `render.py` resolves it without the canvas runtime: Secession text becomes
 inline SVG, the blob becomes a `<canvas>` with the WebGL shader from `Blob.dc.html`.
+
+## Slides
+
+`python3 -X utf8 tools/deck.py` builds `build/deck/index.html`: one self-contained presentation where the
+same blob rotates and travels between slides. Arrow keys / space / click to navigate, `F` fullscreen,
+`#N` jumps to slide N. `node tools/export-deck.js` writes PNGs and the PDF fallback to `exports/deck/`
+(`npm run deck` does both). Needs `pip install qrcode` for the QR codes. Layouts are the functions in
+`tools/deck.py`; links and the optional `wifi` (`{"ssid", "password"}`) come from `editions/*.json`.
 
 ## Roadmap
 

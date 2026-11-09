@@ -7,5 +7,12 @@
   "ort_lang": "Café Ritter",
   "adresse": "Mariahilfer Str. 73, 1060 Wien",
   "adresse_kurz": "Mariahilfer Str. 73",
-  "anmeldung": "https://luma.com/ba5jlhla"
+  "anmeldung": "https://luma.com/ba5jlhla",
+  "links": {
+    "telos": "https://links.teloscircle.com",
+    "discord": "https://discord.gg/vjTeFrPsN",
+    "github": "https://github.com/topsrek/waiss",
+    "linkedin": "https://linkedin.com/in/pwimberger"
+  },
+  "wifi": null
 }

@@ -19,14 +19,14 @@ SRC = ROOT / "design" / "canvas"
 INK = "#1F1E1B"
 
 # --- Blob shader + presets -------------------------------------------------------
-blob_src = (SRC / "Blob.dc.html").read_text()
+blob_src = (SRC / "Blob.dc.html").read_text(encoding="utf-8")
 FS = re.search(r"const fs = `(.*?)`;", blob_src, re.S).group(1)
 PRESET_RE = r"\{ ph: ([\d.]+), rot: ([\d.]+), b: \[(.*?)\] \}"
 PRESETS = [(float(m.group(1)), float(m.group(2)), json.loads("[" + m.group(3) + "]"))
            for m in re.finditer(PRESET_RE, blob_src)]
 
 # --- Secession glyphs ------------------------------------------------------------
-G = json.loads(re.search(r"const G = (\{.*?\});", (SRC / "Txt.dc.html").read_text()).group(1))
+G = json.loads(re.search(r"const G = (\{.*?\});", (SRC / "Txt.dc.html").read_text(encoding="utf-8")).group(1))
 
 
 def txt(text, size):
@@ -85,7 +85,7 @@ document.title='ready';
 
 
 def render(fn, w, h, vals):
-    s = (SRC / fn).read_text()
+    s = (SRC / fn).read_text(encoding="utf-8")
     head = "".join(re.findall(r"<link [^>]*>", s)) + "".join(re.findall(r"<style>.*?</style>", s, re.S))
     body = re.search(r"</helmet>(.*)</x-dc>", s, re.S).group(1)
     fill = lambda v: re.sub(r"\{\{\s*([\w.]+)\s*\}\}", lambda m: str(vals.get(m.group(1), m.group(0))), v)
@@ -110,7 +110,7 @@ def render(fn, w, h, vals):
 
 def main():
     edition_file = Path(sys.argv[1] if len(sys.argv) > 1 else ROOT / "editions" / "001.json")
-    ed = json.loads(edition_file.read_text())
+    ed = json.loads(edition_file.read_text(encoding="utf-8"))
     out = ROOT / "build" / edition_file.stem
     out.mkdir(parents=True, exist_ok=True)
     vals = dict(DEFAULTS)
@@ -126,7 +126,7 @@ def main():
         if fn == "FlyerA.dc.html":
             html = html.replace("Mariahilfer Str. 73 · luma.com/ba5jlhla",
                                 f'{ed["adresse_kurz"]} · {ed["anmeldung"].replace("https://", "")}')
-        (out / f"{name}.html").write_text(html)
+        (out / f"{name}.html").write_text(html, encoding="utf-8")
         sizes[name] = [w, h]
     (out / "sizes.json").write_text(json.dumps(sizes))
     print(f"built {out}")

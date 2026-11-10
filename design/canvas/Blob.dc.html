@@ -91,6 +91,8 @@ uniform vec3 uCam;
 uniform float uShine;
 uniform float uSpike;
 
+float gBlob; // metaball-only distance of the last map() call, for the dark spike tips
+
 float smin(float a, float b, float k){ float h = max(k - abs(a - b), 0.0) / k; return min(a, b) - h * h * k * 0.25; }
 
 vec3 orient(vec3 p){
@@ -118,11 +120,33 @@ vec3 unorient(vec3 p){
   return vec3(c * p.x - s * p.z, p.y, s * p.x + c * p.z);
 }
 
-float spike(vec3 q, vec3 dir, float len, float r){
-  vec3 n = normalize(dir);
+// Spike geometry depends only on uniforms: computed once per pixel in main(), not per SDF evaluation.
+vec3 gDir[14]; vec4 gTip[14];
+// Loop bound the compiler cannot see as constant (uSpike >= 0), so D3D's FXC keeps the SDF loops as loops instead of unrolling them.
+int gN;
+
+vec4 spikeTip(vec3 n, float len, float r){
   float facing = dot(unorient(n), normalize(vec3(0.0, 0.35, 4.6)));
   float k = 1.0 - smoothstep(0.42, 0.78, facing);
-  return sdRoundCone(q, n * 0.25, n * mix(0.55, 1.08 + 0.32 * len * uSpike, k), r * 1.15 * mix(0.7, 1.0, k), 0.005);
+  return vec4(n * mix(0.55, 1.08 + 0.32 * len * uSpike, k), r * 1.15 * mix(0.7, 1.0, k));
+}
+
+void initSpikes(){
+  gN = uSpike > -1.0 ? 14 : 0;
+  gDir[0] = normalize(vec3(0.371, 0.929, 0.000)); gTip[0] = spikeTip(gDir[0], 0.65, 0.20);
+  gDir[1] = normalize(vec3(-0.456, 0.786, 0.418)); gTip[1] = spikeTip(gDir[1], 0.80, 0.18);
+  gDir[2] = normalize(vec3(0.067, 0.643, -0.763)); gTip[2] = spikeTip(gDir[2], 0.35, 0.19);
+  gDir[3] = normalize(vec3(0.527, 0.500, 0.687)); gTip[3] = spikeTip(gDir[3], 0.35, 0.17);
+  gDir[4] = normalize(vec3(-0.920, 0.357, -0.163)); gTip[4] = spikeTip(gDir[4], 0.35, 0.20);
+  gDir[5] = normalize(vec3(0.824, 0.214, -0.524)); gTip[5] = spikeTip(gDir[5], 0.50, 0.15);
+  gDir[6] = normalize(vec3(-0.259, 0.071, 0.963)); gTip[6] = spikeTip(gDir[6], 0.80, 0.17);
+  gDir[7] = normalize(vec3(-0.460, -0.071, -0.885)); gTip[7] = spikeTip(gDir[7], 0.50, 0.15);
+  gDir[8] = normalize(vec3(0.918, -0.214, 0.335)); gTip[8] = spikeTip(gDir[8], 0.80, 0.15);
+  gDir[9] = normalize(vec3(-0.863, -0.357, 0.356)); gTip[9] = spikeTip(gDir[9], 0.95, 0.16);
+  gDir[10] = normalize(vec3(0.367, -0.500, -0.784)); gTip[10] = spikeTip(gDir[10], 0.50, 0.18);
+  gDir[11] = normalize(vec3(0.229, -0.643, 0.731)); gTip[11] = spikeTip(gDir[11], 0.95, 0.20);
+  gDir[12] = normalize(vec3(-0.535, -0.786, -0.310)); gTip[12] = spikeTip(gDir[12], 0.95, 0.18);
+  gDir[13] = normalize(vec3(0.362, -0.929, -0.080)); gTip[13] = spikeTip(gDir[13], 0.35, 0.20);
 }
 
 float map(vec3 p){
@@ -130,65 +154,18 @@ float map(vec3 p){
   q += uWarp * sin(q.yzx * 2.1 + vec3(uPhase, uPhase * 0.7, uPhase * 1.3));
   q += uWarp * 0.5 * sin(q.zxy * 4.3 - vec3(uPhase * 1.1, uPhase * 0.5, uPhase * 0.9));
   float d = 1e5;
-  for (int i = 0; i < 8; i++) { d = smin(d, length(q - uB[i].xyz) - uB[i].w, 0.44); }
+  for (int i = 0; i < 8; i++) { if (i >= gN) break; d = smin(d, length(q - uB[i].xyz) - uB[i].w, 0.44); }
+  gBlob = d;
   if (uSpike > 0.001) {
     float s = 1e5;
-    s = smin(s, spike(q, vec3(0.371, 0.929, 0.000), 0.65, 0.20), 0.18);
-    s = smin(s, spike(q, vec3(-0.456, 0.786, 0.418), 0.80, 0.18), 0.18);
-    s = smin(s, spike(q, vec3(0.067, 0.643, -0.763), 0.35, 0.19), 0.18);
-    s = smin(s, spike(q, vec3(0.527, 0.500, 0.687), 0.35, 0.17), 0.18);
-    s = smin(s, spike(q, vec3(-0.920, 0.357, -0.163), 0.35, 0.20), 0.18);
-    s = smin(s, spike(q, vec3(0.824, 0.214, -0.524), 0.50, 0.15), 0.18);
-    s = smin(s, spike(q, vec3(-0.259, 0.071, 0.963), 0.80, 0.17), 0.18);
-    s = smin(s, spike(q, vec3(-0.460, -0.071, -0.885), 0.50, 0.15), 0.18);
-    s = smin(s, spike(q, vec3(0.918, -0.214, 0.335), 0.80, 0.15), 0.18);
-    s = smin(s, spike(q, vec3(-0.863, -0.357, 0.356), 0.95, 0.16), 0.18);
-    s = smin(s, spike(q, vec3(0.367, -0.500, -0.784), 0.50, 0.18), 0.18);
-    s = smin(s, spike(q, vec3(0.229, -0.643, 0.731), 0.95, 0.20), 0.18);
-    s = smin(s, spike(q, vec3(-0.535, -0.786, -0.310), 0.95, 0.18), 0.18);
-    s = smin(s, spike(q, vec3(0.362, -0.929, -0.080), 0.35, 0.20), 0.18);
+    for (int i = 0; i < 14; i++) { if (i >= gN) break; s = smin(s, sdRoundCone(q, gDir[i] * 0.25, gTip[i].xyz, gTip[i].w, 0.005), 0.18); }
     d = smin(d, s, 0.22);
   }
   return d;
 }
 
-float blobOnly(vec3 p){
-  vec3 q = orient(p);
-  q += uWarp * sin(q.yzx * 2.1 + vec3(uPhase, uPhase * 0.7, uPhase * 1.3));
-  q += uWarp * 0.5 * sin(q.zxy * 4.3 - vec3(uPhase * 1.1, uPhase * 0.5, uPhase * 0.9));
-  float d = 1e5;
-  for (int i = 0; i < 8; i++) { d = smin(d, length(q - uB[i].xyz) - uB[i].w, 0.44); }
-  return d;
-}
-
-vec3 nrm(vec3 p){
-  const vec2 e = vec2(0.0015, -0.0015);
-  return normalize(e.xyy * map(p + e.xyy) + e.yyx * map(p + e.yyx) + e.yxy * map(p + e.yxy) + e.xxx * map(p + e.xxx));
-}
-
-float shadow(vec3 ro, vec3 rd){
-  float r = 1.0; float t = 0.02;
-  for (int i = 0; i < 48; i++) {
-    float h = map(ro + rd * t);
-    r = min(r, 8.0 * h / t);
-    t += clamp(h * 0.8, 0.015, 0.25);
-    if (r < 0.001 || t > 5.0) break;
-  }
-  r = clamp(r, 0.0, 1.0);
-  return r * r * (3.0 - 2.0 * r);
-}
-
-float ao(vec3 p, vec3 n){
-  float o = 0.0; float s = 1.0;
-  for (int i = 1; i <= 5; i++) {
-    float h = 0.01 + 0.03 * float(i * i);
-    o += (h - map(p + n * h)) * s;
-    s *= 0.7;
-  }
-  return clamp(1.0 - 1.4 * o, 0.0, 1.0);
-}
-
 void main(){
+  initSpikes();
   vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y;
   uv = (uv - uCam.yz) / uCam.x;
   const float F = 2.2;
@@ -199,28 +176,66 @@ void main(){
   vec3 vv = cross(uu, ww);
   vec3 rd = normalize(uv.x * uu + uv.y * vv + F * ww);
   float px = 1.0 / (uRes.y * uCam.x * F);
+  vec3 l = normalize(vec3(-0.6, 0.75, 0.45));
+  const vec2 e = vec2(0.0015, -0.0015);
 
+  // All SDF evaluations share one call site, so the HLSL compiler inlines map() only once.
+  // Stages: 0 march, 1 normal (4 taps), 2 tip mask, 3 sun shadow, 4 ambient occlusion (5 taps), 5 reflection shadow.
+  int stage = 0; int k = 0;
   float t = 0.0; bool hit = false;
   float bestR = 1e5; float bestT = 0.0;
-  for (int i = 0; i < 140; i++) {
-    vec3 p = ro + rd * t;
-    float d = map(p);
-    float r = d / max(t, 0.001);
-    if (r < bestR && t > 1.0) { bestR = r; bestT = t; }
-    if (d < 0.0006 * t) { hit = true; bestT = t; break; }
-    t += d * 0.7;
-    if (t > 12.0) break;
+  float a = 0.0;
+  vec3 p = vec3(0.0); vec3 n = vec3(0.0); vec3 rf = vec3(0.0);
+  vec3 sro = vec3(0.0); vec3 srd = vec3(0.0);
+  float sr = 1.0; float st = 0.0; float sh = 1.0; float rsh = 1.0;
+  float o = 0.0; float os = 1.0; float tipD = 0.0;
+  for (int i = 0; i < 247; i++) {
+    vec3 q;
+    if (stage == 0) q = ro + rd * t;
+    else if (stage == 1) q = p + (k == 0 ? e.xyy : k == 1 ? e.yyx : k == 2 ? e.yxy : e.xxx);
+    else if (stage == 2) q = p;
+    else if (stage == 4) q = p + n * (0.01 + 0.03 * float((k + 1) * (k + 1)));
+    else q = sro + srd * st;
+    float d = map(q);
+    if (stage == 0) {
+      float r = d / max(t, 0.001);
+      if (r < bestR && t > 1.0) { bestR = r; bestT = t; }
+      bool done = false;
+      if (d < 0.0006 * t) { hit = true; bestT = t; done = true; }
+      else { t += d * 0.7; k++; done = t > 12.0 || k >= 140; }
+      if (done) {
+        a = hit ? 1.0 : 1.0 - smoothstep(0.0, 1.6 * px, bestR);
+        if (a <= 0.0) break;
+        p = ro + rd * bestT; stage = 1; k = 0;
+      }
+    } else if (stage == 1) {
+      n += (k == 0 ? e.xyy : k == 1 ? e.yyx : k == 2 ? e.yxy : e.xxx) * d;
+      k++;
+      if (k == 4) { n = normalize(n); stage = 2; k = 0; }
+    } else if (stage == 2) {
+      tipD = gBlob;
+      stage = 3; sro = p + n * 0.012; srd = l; sr = 1.0; st = 0.02;
+    } else if (stage == 4) {
+      o += (0.01 + 0.03 * float((k + 1) * (k + 1)) - d) * os;
+      os *= 0.7; k++;
+      if (k == 5) { rf = reflect(rd, n); stage = 5; k = 0; sro = p + n * 0.02; srd = rf; sr = 1.0; st = 0.02; }
+    } else {
+      sr = min(sr, 8.0 * d / st);
+      st += clamp(d * 0.8, 0.015, 0.25);
+      k++;
+      if (sr < 0.001 || st > 5.0 || k >= 48) {
+        sr = clamp(sr, 0.0, 1.0);
+        float v = sr * sr * (3.0 - 2.0 * sr);
+        if (stage == 3) { sh = v; stage = 4; k = 0; }
+        else { rsh = v; break; }
+      }
+    }
   }
 
-  float a = hit ? 1.0 : 1.0 - smoothstep(0.0, 1.6 * px, bestR);
   vec4 outc = vec4(0.0);
   if (a > 0.0) {
-    vec3 p = ro + rd * bestT;
-    vec3 n = nrm(p);
-    vec3 l = normalize(vec3(-0.6, 0.75, 0.45));
     vec3 f = normalize(vec3(0.75, -0.05, 0.6));
-    float sh = shadow(p + n * 0.012, l);
-    float oc = ao(p, n);
+    float oc = clamp(1.0 - 1.4 * o, 0.0, 1.0);
     vec3 alb = vec3(1.0, 0.997, 0.99);
     float wrap = clamp((dot(n, l) + 0.45) / 1.45, 0.0, 1.0);
     float fil = clamp((dot(n, f) + 0.3) / 1.3, 0.0, 1.0);
@@ -234,26 +249,25 @@ void main(){
     vec3 hv = normalize(l - rd);
     float fr = pow(clamp(1.0 + dot(n, rd), 0.0, 1.0), 4.0);
     col = mix(col, col * vec3(0.93, 0.925, 0.915), fr * 0.3 * (1.0 - uShine));
-    vec3 rf = reflect(rd, n);
     float ry = clamp(rf.y * 0.5 + 0.5, 0.0, 1.0);
     vec3 env = mix(vec3(0.62, 0.61, 0.59), vec3(1.02, 1.01, 0.99), smoothstep(0.25, 0.85, ry));
     env += 1.5 * smoothstep(0.80, 0.93, dot(rf, normalize(vec3(-0.65, 0.65, 0.40))));
     env += 0.9 * smoothstep(0.88, 0.96, dot(rf, normalize(vec3(0.85, 0.25, 0.45))));
     env += 0.5 * smoothstep(0.90, 0.99, dot(rf, normalize(vec3(0.10, 0.20, 1.0))));
-    float rsh = shadow(p + n * 0.02, rf);
     float fre = 0.05 + 0.95 * pow(1.0 - clamp(dot(n, -rd), 0.0, 1.0), 5.0);
     col = mix(col, env * mix(0.55, 1.0, rsh) * mix(0.8, 1.0, oc), clamp(fre * 0.85 + 0.12, 0.0, 1.0) * uShine);
     col += (0.10 + 0.9 * uShine) * pow(clamp(dot(n, hv), 0.0, 1.0), mix(36.0, 220.0, uShine)) * sh;
     col = col * (1.0 + col / 1.3) / (1.0 + col);
     col = clamp(col * 1.16, 0.0, 1.0);
-    float tip = smoothstep(0.03, 0.42, blobOnly(p)) * step(0.001, uSpike);
+    float tip = smoothstep(0.03, 0.42, tipD) * step(0.001, uSpike);
     col = mix(col, col * vec3(0.30, 0.295, 0.29), tip * 0.85);
     outc = vec4(col * a, a);
   }
   float dn = (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) / 255.0;
   outc.rgb += dn * outc.a;
   gl_FragColor = outc;
-}`;
+}
+`;
     const mk = (type, src) => {
       const s = gl.createShader(type);
       gl.shaderSource(s, src);

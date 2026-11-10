@@ -1,11 +1,13 @@
 {
   "name": "waiss",
   "private": true,
-  "description": "WAISS \u2013 Wiener AI Software Stammtisch: branding, blob, flyers, slides",
+  "description": "WAISS – Wiener AI Software Stammtisch: branding, blob, flyers, slides, website",
   "scripts": {
     "render": "python3 tools/render.py",
     "shots": "node tools/screenshot.js",
-    "deck": "python -X utf8 tools/deck.py && node tools/export-deck.js"
+    "deck": "python -X utf8 tools/deck.py && node tools/export-deck.js",
+    "site": "python -X utf8 tools/site.py",
+    "build": "npm run deck && npm run site"
   },
   "devDependencies": {
     "playwright": "^1.48.0"

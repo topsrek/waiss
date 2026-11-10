@@ -14,5 +14,25 @@
     "github": "https://github.com/topsrek/waiss",
     "linkedin": "https://linkedin.com/in/pwimberger"
   },
-  "wifi": null
+  "wifi": null,
+  "deck": "deck",
+  "parts": [
+    {
+      "title": "Intro",
+      "from": "titel"
+    },
+    {
+      "title": "AI Recap",
+      "from": "muse-tweet"
+    },
+    {
+      "title": "Show & Tell",
+      "from": "talk"
+    },
+    {
+      "title": "Open round",
+      "from": "frage"
+    }
+  ],
+  "talks": []
 }

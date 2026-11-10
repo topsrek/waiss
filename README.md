@@ -21,7 +21,9 @@ assets/logo/     Telos Circle logo (column, wordmark, "by" lockup) as clean SVGs
 editions/        One JSON per meetup (edition, date, time, venue, sign-up link)
 texts/           Announcement texts per edition (WhatsApp DE/EN, Luma)
 exports/         Rendered PNGs per edition
-tools/           render.py + screenshot.js – flyers; deck.py + export-deck.js – the slide deck
+tools/           render.py + screenshot.js – flyers; deck.py + export-deck.js – the slide deck;
+                 site.py + site.css + site.js – the website
+assets/fonts/    Self-hosted web fonts (tools/fetch-fonts.py), so neither site nor deck calls Google
 docs/brand.md    Colors, wordmark, blob parameters, layout rules
 ```
 
@@ -48,9 +50,43 @@ same blob rotates and travels between slides. Arrow keys / space / click to navi
 (`npm run deck` does both). Needs `pip install qrcode` for the QR codes. Layouts are the functions in
 `tools/deck.py`; links and the optional `wifi` (`{"ssid", "password"}`) come from `editions/*.json`.
 
+## Website
+
+**https://waiss.teloscircle.com**: what WAISS is, upcoming and past editions with their Luma links, and every
+edition's slides, split into its parts (Intro, AI Recap, Show & Tell, Open round). Thumbnails open the live deck
+at that slide.
+
+```bash
+pip install -r requirements.txt && npm ci && npx playwright install chromium
+npm run build          # deck + slide PNGs + site -> dist/
+```
+
+`tools/site.py` reads `editions/*.json`. Website fields per edition:
+
+| Field | Meaning |
+|---|---|
+| `anmeldung` | Luma link ("Register" while upcoming, "Luma" afterwards) |
+| `deck` | Folder name of the built deck: `build/<deck>/` and `exports/<deck>/` |
+| `parts` | `[{"title", "from"}]`: a part starts at the slide named `from` (without the `NN-` prefix) |
+| `talks` | `[{"title", "speaker", "url" or "pdf"}]`: slides people bring themselves, shown under Show & Tell |
+
+An edition is "upcoming" up to and including its day and "past" from the next day (Vienna time). The page
+decides this live in the browser, and the nightly build does the same for visitors without JavaScript.
+
+Deployment: `.github/workflows/site.yml` builds every pull request. On `main` it pushes `dist/` (with `deploy/Dockerfile`,
+nginx) to the `site` branch, which Coolify on the Telos Hetzner server serves and redeploys on every new commit.
+
+## Contributing slides
+
+Giving a talk? Open a pull request:
+
+- **In the WAISS look:** add your slides as layouts in `tools/deck.py` (see the `l_*` functions) and run `npm run deck`.
+- **Your own format:** put a PDF under `talks/<NNN>/` (or use a link) and add it to `talks` in `editions/<NNN>.json`.
+
+The pull request build shows whether everything renders. Once it is merged, the slides go live.
+
 ## Roadmap
 
-- [ ] Slides website: the monthly recap as HTML slides with the blob in the background,
-      reacting to slide changes. Others can contribute slides via pull request.
-- [ ] Slide generator: one folder per edition, blob transitions between slides.
+- [ ] One folder per edition (`editions/NNN/`) with its own deck and one sub-folder per talk, so decks of past
+      editions stay as they were and contributors don't edit the same file.
 - [ ] Flyer generator for the next editions directly from `editions/*.json`.

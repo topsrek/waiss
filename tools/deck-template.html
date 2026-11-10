@@ -118,8 +118,10 @@ if(PRINT){
   addEventListener('load',async()=>{
     const b=createBlob(gcv);
     for(let i=0;b&&i<slides.length;i++){
-      const s=target(cams[i]);b.draw(s,s.ph,0.05,1);
-      shots[i].getContext('2d').drawImage(gcv,0,0);
+      // half resolution, scaled up: the soft blob looks the same in the PDF, and 70+ slides render 4x faster
+      // (on a CI runner without a GPU the full-size pass took longer than the 300 s timeout)
+      const s=target(cams[i]);b.draw(s,s.ph,0.05,0.5);
+      const g=shots[i].getContext('2d');g.imageSmoothingQuality='high';g.drawImage(gcv,0,0,W,H);
       await new Promise(r=>setTimeout(r,0));
     }
     ready();

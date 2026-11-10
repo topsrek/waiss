@@ -15,7 +15,7 @@ Inputs
 Upcoming vs. past is decided in the browser (Vienna time): an edition counts as past from the day after it.
 The build does the same for visitors without JavaScript, and CI rebuilds every night.
 """
-import html, json, os, re, shutil, sys, unicodedata
+import html, json, os, re, shutil, subprocess, sys, unicodedata
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -39,6 +39,15 @@ TELOS = {
     "linkedin": "https://www.linkedin.com/company/telos-circle", "instagram": "https://www.instagram.com/teloscircle",
     "x": "https://x.com/CircleTelos",
 }
+NAME = "WAISS – Wiener AI Software Stammtisch"
+# one sentence that answers who/what/where/how often; reused by meta description, JSON-LD and llms.txt
+ABOUT = ("WAISS (Wiener AI Software Stammtisch) is a free meetup in Vienna for everyone who builds with AI, "
+         "about once a month, organized by the nonprofit Telos Circle.")
+DESC = ("Free monthly meetup in Vienna for people who build with AI: AI recap of the month, show & tell, open round. "
+        "The KI-Stammtisch in Wien by Telos Circle.")
+FORMAT = [("AI Recap", "What mattered in AI last month", "20 min"),
+          ("Show &amp; Tell", "Tool tips and your own projects", "short talks"),
+          ("Open round", "Chat, discuss, meet people", "open end")]
 esc = html.escape
 FONT_LINK = '<link rel="stylesheet" href="{p}fonts/fonts.css">'
 
@@ -50,7 +59,7 @@ def load_editions():
         ed = json.loads(f.read_text(encoding="utf-8"))
         num = int(re.sub(r"\D", "", ed["edition"]))
         start = datetime.strptime(f'{ed["datum"]} {ed["zeit"]}', "%d.%m.%Y %H:%M").replace(tzinfo=VIENNA)
-        ed.update(num=num, slug=str(num), start=start, day=start.date().isoformat(),
+        ed.update(num=num, slug=str(num), start=start, file=f.relative_to(ROOT).as_posix(), day=start.date().isoformat(),
                   luma=ed.get("anmeldung"), slides=load_slides(ed))
         eds.append(ed)
     return sorted(eds, key=lambda e: e["start"])
@@ -148,11 +157,8 @@ def hero():
 
 
 def format_(eds, today):
-    rows = [("01", "AI Recap", "What mattered in AI last month", "20 min"),
-            ("02", "Show &amp; Tell", "Tool tips and your own projects", "short talks"),
-            ("03", "Open round", "Chat, discuss, meet people", "open end")]
-    r = "".join(f'<li><span class="n">{n}</span><span class="t">{t}</span><span class="w">{w}</span><span class="m">{m}</span></li>'
-                for n, t, w, m in rows)
+    r = "".join(f'<li><span class="n">{n:02d}</span><span class="t">{t}</span><span class="w">{w}</span><span class="m">{m}</span></li>'
+                for n, (t, w, m) in enumerate(FORMAT, 1))
     nxt = next((e for e in eds if e["day"] >= today and e["luma"]), None)
     cta = (f'<div class="btns" data-until="{nxt["day"]}">{ext(nxt["luma"], "Register on Luma", "btn")}</div>' if nxt else "")
     return f'''
@@ -160,6 +166,7 @@ def format_(eds, today):
   <div class="wrap">
     <div class="eyebrow">Every edition</div>
     <ul class="agenda">{r}</ul>
+    <p class="sub">Free to attend, about once a month in Vienna, for everyone who builds with AI.</p>
     {cta}
   </div>
 </section>'''
@@ -339,8 +346,249 @@ def privacy(eds):
 </section>'''
 
 
+# ------------------------------------------------------------------------------------- search engines and LLMs
+# Everything a crawler reads besides the visible page: <head> tags, JSON-LD, robots.txt, sitemap.xml, llms.txt and a
+# text version of every deck (slides.md). All of it comes from editions/*.json and the built decks.
+ORG_ID, SERIES_ID, SITE_ID = SITE + "/#telos-circle", SITE + "/#waiss", SITE + "/#website"
+OG_W, OG_H = 1200, 630
+ICONS = []  # filled by build_icons(): extra <link>s for the PNG/ICO icons once assets/logo/waiss-blob*.png exists
+
+
+def head(title, desc, canonical, prefix="", image=None, robots=None, ld=None, alt=None):
+    """<head> tags for search engines and link previews (shared by the site pages and the decks)."""
+    image = image or f"{SITE}/og.jpg"
+    tags = [f"<title>{esc(title)}</title>", f'<meta name="description" content="{esc(desc)}">']
+    if robots:
+        tags.append(f'<meta name="robots" content="{robots}">')
+    else:
+        tags.append(f'<link rel="canonical" href="{canonical}">')
+    tags += [f'<meta property="og:site_name" content="WAISS">', '<meta property="og:type" content="website">',
+             '<meta property="og:locale" content="en_GB">',
+             f'<meta property="og:title" content="{esc(title)}">', f'<meta property="og:description" content="{esc(desc)}">',
+             f'<meta property="og:url" content="{canonical}">', f'<meta property="og:image" content="{image}">',
+             f'<meta property="og:image:width" content="{OG_W}">', f'<meta property="og:image:height" content="{OG_H}">',
+             f'<meta property="og:image:alt" content="{esc(NAME)}">', '<meta name="twitter:card" content="summary_large_image">',
+             '<meta name="theme-color" content="#F5F3EE">',
+             f'<link rel="icon" href="{prefix}favicon.svg" type="image/svg+xml">',
+             *[i.format(p=prefix) for i in ICONS]]
+    if alt:
+        tags.append(f'<link rel="alternate" type="text/markdown" href="{alt}" title="Slides as text">')
+    if ld:
+        js = json.dumps(ld, ensure_ascii=False, indent=1).replace("</", "<\\/")
+        tags.append(f'<script type="application/ld+json">{js}</script>')
+    return "\n".join(tags)
+
+
+def address(ed):
+    """'Mariahilfer Str. 73, 1060 Wien' -> schema.org PostalAddress."""
+    street, _, rest = ed["adresse"].partition(", ")
+    m = re.match(r"(\d{4})\s+(.+)", rest)
+    return {"@type": "PostalAddress", "streetAddress": street, "postalCode": m[1] if m else None,
+            "addressLocality": m[2] if m else rest, "addressRegion": "Wien", "addressCountry": "AT"}
+
+
+def organization():
+    return {"@type": "Organization", "@id": ORG_ID, "name": "Telos Circle", "url": TELOS["website"],
+            "logo": f"{SITE}/telos-circle.svg",
+            "description": "Vienna-based nonprofit fostering interdisciplinary innovation across science, technology "
+                           "and entrepreneurship.",
+            "address": {"@type": "PostalAddress", "addressLocality": "Wien", "addressCountry": "AT"},
+            "sameAs": [TELOS["website"], TELOS["linkedin"], TELOS["instagram"], TELOS["x"], TELOS["events"]]}
+
+
+def event_ld(ed):
+    s = ed["slug"]
+    ev = {"@type": "Event", "@id": f"{SITE}/{s}/#event", "name": f"WAISS {ed['edition']} – Wiener AI Software Stammtisch",
+          "description": f"WAISS {ed['edition']}: an AI recap of the month, show & tell and an open round, at "
+                         f"{ed['ort_lang']} in Vienna. Free, organized by Telos Circle.",
+          "startDate": ed["start"].isoformat(timespec="minutes"),
+          "eventStatus": "https://schema.org/" + ed.get("status", "EventScheduled"),
+          "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+          "location": {"@type": "Place", "name": ed["ort_lang"], "address": address(ed)},
+          "image": ed["images"],
+          "organizer": {"@type": "Organization", "@id": ORG_ID, "name": "Telos Circle", "url": TELOS["website"]},
+          "isAccessibleForFree": True, "url": f"{SITE}/", "superEvent": {"@id": SERIES_ID}}
+    if ed["luma"]:
+        ev["offers"] = {"@type": "Offer", "url": ed["luma"], "price": 0, "priceCurrency": "EUR",
+                        "availability": "https://schema.org/InStock"}
+    if ed["slides"]:
+        ev["subjectOf"] = {"@type": "PresentationDigitalDocument", "name": f"WAISS {ed['edition']} slides",
+                           "url": f"{SITE}/{s}/", "encodingFormat": "text/html"}
+    return ev
+
+
+def site_ld(eds):
+    series = {"@type": "EventSeries", "@id": SERIES_ID, "name": NAME,
+              "alternateName": ["WAISS", "Wiener AI Software Stammtisch", "KI-Stammtisch Wien"], "description": ABOUT,
+              "url": f"{SITE}/", "image": f"{SITE}/og.jpg", "organizer": {"@id": ORG_ID},
+              "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode", "isAccessibleForFree": True,
+              "location": {"@type": "Place", "name": "Vienna",
+                           "address": {"@type": "PostalAddress", "addressLocality": "Wien", "addressCountry": "AT"}},
+              "keywords": "AI meetup Vienna, KI Stammtisch Wien, AI Software, Show and Tell",
+              "subEvent": [{"@id": f"{SITE}/{e['slug']}/#event"} for e in eds]}
+    website = {"@type": "WebSite", "@id": SITE_ID, "url": f"{SITE}/", "name": "WAISS",
+               "alternateName": "Wiener AI Software Stammtisch", "inLanguage": "en", "publisher": {"@id": ORG_ID}}
+    return {"@context": "https://schema.org", "@graph": [website, organization(), series, *map(event_ld, eds)]}
+
+
+def deck_ld(ed):
+    return {"@context": "https://schema.org", "@type": "PresentationDigitalDocument", "@id": f"{SITE}/{ed['slug']}/",
+            "name": f"WAISS {ed['edition']} slides", "url": f"{SITE}/{ed['slug']}/", "inLanguage": "en",
+            "datePublished": ed["day"], "author": {"@type": "Organization", "name": "Telos Circle", "url": TELOS["website"]},
+            "about": {"@type": "Event", "@id": f"{SITE}/{ed['slug']}/#event", "name": f"WAISS {ed['edition']}",
+                      "startDate": ed["start"].isoformat(timespec="minutes"),
+                      "location": {"@type": "Place", "name": ed["ort_lang"], "address": address(ed)}},
+            "isPartOf": {"@id": SITE_ID}, "image": f"{SITE}/{ed['slug']}/og.jpg"}
+
+
+def deck_page(raw, ed=None, master=False):
+    """A built deck as the site serves it: fonts from the site, plus the <head> tags (title, description, canonical,
+    JSON-LD). Only <head> and <html lang> change; the slides stay as tools/deck.py built them."""
+    assert D.FONTS in raw, "deck does not use tools/deck.py's FONTS"
+    raw = raw.replace(D.FONTS, FONT_LINK.format(p="../"))
+    if master:
+        tags = head("WAISS – Master slides", "Every slide layout of the WAISS decks, with placeholder content.",
+                    f"{SITE}/master/", "../", robots="noindex, follow")
+    else:
+        s = ed["start"]
+        parts = [p for p, _ in ed["slides"]]
+        tags = head(f"WAISS {ed['edition']} slides – AI recap {s:%B %Y}, Vienna",
+                    f"Slides of WAISS {ed['edition']}, the Wiener AI Software Stammtisch on {s:%a} {s.day} {s:%b %Y} at "
+                    f"{ed['ort_lang']}, Vienna: {', '.join(parts)}.",
+                    f"{SITE}/{ed['slug']}/", "../", image=f"{SITE}/{ed['slug']}/og.jpg", ld=deck_ld(ed), alt="slides.md")
+    raw, n = re.subn(r"<title>.*?</title>", lambda m: tags, raw, count=1, flags=re.S)
+    assert n == 1, "deck has no <title>"
+    return re.sub(r'<html lang="[^"]*">', '<html lang="en">', raw, count=1)
+
+
+BLOCK = re.compile(r"</?(?:div|p|li|h[1-6]|tr|br|section|ul|ol|table)\b[^>]*>", re.I)
+
+
+def slides_text(ed, raw):
+    """The deck as Markdown, for crawlers and LLMs: one heading per slide, its visible text below.
+    Slide 1 is drawn in the Secession lettering (SVG paths), so its text comes from the edition."""
+    secs = re.findall(r'<section class="slide" data-name="([^"]+)"[^>]*>(.*?)</section>', raw, re.S)
+    part_of = {n: p for p, sl in ed["slides"] for _, n in sl}
+    s = ed["start"]
+    out = [f"# WAISS {ed['edition']} – slides", "",
+           f"Wiener AI Software Stammtisch · {s:%a} {s.day} {s:%b %Y}, {s:%H:%M} · {ed['ort_lang']}, {ed['adresse']}", "",
+           f"Present: {SITE}/{ed['slug']}/" + (f" · PDF: {SITE}/{ed['slug']}/waiss-{ed['slug']}-slides.pdf" if ed.get("pdf") else ""),
+           f"Source: {REPO}", ""]
+    part = None
+    for k, (name, body) in enumerate(secs, 1):
+        if part_of.get(name, part) != part:
+            part = part_of.get(name, part)
+            out += [f"## {part}", ""]
+        body = re.sub(r"<(script|style|svg|video)\b[^>]*>.*?</\1>", " ", body, flags=re.S | re.I)
+        body = BLOCK.sub("\n", body)
+        text = html.unescape(re.sub(r"<[^>]+>", " ", body))
+        lines = [re.sub(r"\s+", " ", ln).strip() for ln in text.split("\n")]
+        lines = [re.sub(r"\s*\[[a-z ]{1,16}\]", "", ln, flags=re.I) for ln in lines]  # placeholders like [xx min]
+        lines = [ln for ln in lines if ln and not re.fullmatch(r"WAISS · #\d+( \d+( / \d+)?)?|\[[^\]]{1,24}\]", ln)]
+        if k == 1:
+            lines = [NAME, f"{ed['edition']} · {ed['datum']} · {ed['zeit']} · {ed['ort_lang']}"]
+        out += [f"### {k:02d} · {name.split('-', 1)[1]}", "", *lines, ""]
+    return "\n".join(out)
+
+
+def git_date(*paths):
+    """Date of the last commit touching these paths (needs full history: the workflow checks out with fetch-depth 0)."""
+    try:
+        r = subprocess.run(["git", "log", "-1", "--format=%cs", "--", *paths], cwd=ROOT, capture_output=True, text=True)
+        return r.stdout.strip() or None
+    except OSError:
+        return None
+
+
+def sitemap(eds, today):
+    deck_src = ("tools/deck.py", "tools/deck-template.html")
+    home = max(filter(None, [git_date("editions", "tools/site.py", "tools/site.css", "tools/site.js")]
+                      # the page changes on its own the day after an edition (upcoming -> past)
+                      + [(e["start"] + timedelta(days=1)).date().isoformat() for e in eds if e["day"] < today]),
+               default=today)
+    urls = [(f"{SITE}/", home)]
+    for e in eds:
+        if e["slides"]:
+            urls.append((f"{SITE}/{e['slug']}/", git_date(e["file"], *deck_src) or today))
+    urls.append((f"{SITE}/privacy/", git_date("tools/site.py") or today))
+    rows = "".join(f"<url><loc>{u}</loc><lastmod>{min(d, today)}</lastmod></url>\n" for u, d in urls)
+    return ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+            f"{rows}</urlset>\n")
+
+
+ROBOTS = f"""# WAISS – Wiener AI Software Stammtisch. Search engines and AI crawlers are welcome.
+# A short summary for language models: {SITE}/llms.txt
+User-agent: *
+Allow: /
+
+Sitemap: {SITE}/sitemap.xml
+"""
+
+
+def llms(eds, today, full_texts=None):
+    """/llms.txt (llmstxt.org): the facts in a form language models can quote. With full_texts: /llms-full.txt."""
+    up = [e for e in eds if e["day"] >= today]
+    past = [e for e in eds if e["day"] < today][::-1]
+    line = lambda e: (f"- WAISS {e['edition']}: {e['start']:%A} {e['start'].day} {e['start']:%B %Y}, {e['start']:%H:%M} "
+                      f"(Vienna time), {e['ort_lang']}, {e['adresse']}"
+                      + (f". Registration (free): {e['luma']}" if e["luma"] and e in up else "")
+                      + (f". Slides: {SITE}/{e['slug']}/ (as text: {SITE}/{e['slug']}/slides.md)" if e["slides"] else ""))
+    fmt = "\n".join(f"{k}. {html.unescape(t)} ({m}): {w}" for k, (t, w, m) in enumerate(FORMAT, 1))
+    L = eds[-1]["links"]
+    out = f"""# {NAME}
+
+> {ABOUT}
+
+The website and slides are in English; the name is Viennese German ("Stammtisch" = a regular get-together at a
+café table). German: KI-Stammtisch in Wien.
+
+## Facts
+
+- What: a meetup for everyone who builds software with AI
+- Where: Vienna, Austria; the venue is given per edition
+- How often: about once a month
+- Cost: free; registration on Luma
+- Organizer: Telos Circle, a nonprofit in Vienna ({TELOS["website"]})
+- Website: {SITE}/
+
+## Every edition
+
+{fmt}
+
+## Upcoming
+
+{chr(10).join(map(line, up)) or "- The next date is announced on the website and on Discord: " + L["discord"]}
+
+## Past editions
+
+{chr(10).join(map(line, past)) or "- none yet"}
+
+## Links
+
+- [Website]({SITE}/): editions, slides, calendar files
+- [Source code and slides on GitHub]({REPO}): present at a future edition by opening a pull request
+- [Discord]({L["discord"]}): community
+- [Telos Circle]({TELOS["website"]}), [LinkedIn]({TELOS["linkedin"]}), [Instagram]({TELOS["instagram"]}), [X]({TELOS["x"]})
+- Contact: events [at] teloscircle.com
+"""
+    if full_texts is None:
+        return out + f"\n## Optional\n\n- [Full text of all slides]({SITE}/llms-full.txt)\n"
+    demote = lambda t: re.sub(r"^#", "##", t, flags=re.M)  # each deck's title becomes a section of this file
+    return out + "\n## Slides, as text\n\n" + "\n\n".join(map(demote, full_texts))
+
+
+def og_crop(src, dst, w=OG_W, h=OG_H):
+    """Centre crop to w:h, then scale (a 1920×1080 slide loses 36 px top and bottom for 1200×630)."""
+    with Image.open(src) as im:
+        im = im.convert("RGB")
+        sw, sh = im.size
+        cw, ch = (sw, round(sw * h / w)) if sw / sh < w / h else (round(sh * w / h), sh)
+        box = ((sw - cw) // 2, (sh - ch) // 2, (sw - cw) // 2 + cw, (sh - ch) // 2 + ch)
+        im.crop(box).resize((w, h), Image.LANCZOS).save(dst, quality=86, optimize=True, progressive=True)
+
+
 # ------------------------------------------------------------------------------------- page
-def page(title, desc, body, eds, prefix="", canonical=SITE + "/"):
+def page(title, desc, body, eds, prefix="", canonical=SITE + "/", robots=None, ld=None):
     css = (ROOT / "tools" / "site.css").read_text(encoding="utf-8")
     js = (ROOT / "tools" / "site.js").read_text(encoding="utf-8")
     blob = json.dumps({"fs": D.FS, "presets": R.PRESETS, "variant": D.VARIANT})
@@ -349,17 +597,7 @@ def page(title, desc, body, eds, prefix="", canonical=SITE + "/"):
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{esc(title)}</title>
-<meta name="description" content="{esc(desc)}">
-<link rel="canonical" href="{canonical}">
-<meta property="og:type" content="website">
-<meta property="og:title" content="{esc(title)}">
-<meta property="og:description" content="{esc(desc)}">
-<meta property="og:url" content="{canonical}">
-<meta property="og:image" content="{SITE}/og.png">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#F5F3EE">
-<link rel="icon" href="{prefix}favicon.svg" type="image/svg+xml">
+{head(title, desc, canonical, prefix, robots=robots, ld=ld)}
 {FONT_LINK.format(p=prefix)}
 <style>{css}</style>
 </head>
@@ -380,12 +618,45 @@ def page(title, desc, body, eds, prefix="", canonical=SITE + "/"):
 '''
 
 
-def favicon():
+def favicon(k=.62, stroke=16, rx=34):
+    """The Secession W on a rounded tile. k = height of the W in the tile (of 1.0 = 100 units), stroke in glyph units.
+    Small PNG sizes (tools/icons.js) use a bigger, bolder W so it stays readable at 16 px."""
     vx, w, d = R.G["W"]
     s = 100 + 2 * 26
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {s} {s}"><rect width="{s}" height="{s}" rx="34" fill="#F5F3EE"/>'
-            f'<g transform="translate({(s - w * .62) / 2:.1f} {(s - 62) / 2:.1f}) scale(.62)"><path transform="translate({-vx} 0)" '
-            f'd="{d}" fill="none" stroke="#1F1E1B" stroke-width="16"/></g></svg>')
+    h = 100 * k
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {s} {s}"><rect width="{s}" height="{s}" rx="{rx}" fill="#F5F3EE"/>'
+            f'<g transform="translate({(s - w * k) / 2:.1f} {(s - h) / 2:.1f}) scale({k})"><path transform="translate({-vx} 0)" '
+            f'd="{d}" fill="none" stroke="#1F1E1B" stroke-width="{stroke}"/></g></svg>')
+
+
+# PNG icons rendered by tools/icons.js into assets/icons/ (committed; the W does not change):
+# name: (px, favicon() arguments)
+ICON_SPECS = {"icon-16": (16, dict(k=.86, stroke=24, rx=30)), "icon-32": (32, dict(k=.8, stroke=20, rx=32)),
+              "icon-48": (48, dict(k=.74, stroke=18)), "apple-touch-icon": (180, dict(k=.62, rx=0)),
+              "icon-192": (192, {}), "icon-512": (512, {})}
+
+
+def build_icons():
+    """favicon.ico, apple-touch-icon.png and the web manifest from the W icons in assets/icons/ (tools/icons.js)."""
+    src = ROOT / "assets" / "icons"
+    ICONS.clear()
+    if not (src / "icon-32.png").exists():
+        print("warning: assets/icons/ missing (npm run icons): only the SVG favicon")
+        return
+    (OUT / "icons").mkdir()
+    for n in ("icon-192", "icon-512"):
+        shutil.copy(src / f"{n}.png", OUT / "icons" / f"{n}.png")
+    shutil.copy(src / "apple-touch-icon.png", OUT / "apple-touch-icon.png")  # browsers ask for /apple-touch-icon.png
+    with Image.open(src / "icon-48.png") as big:
+        small = [Image.open(src / f"icon-{px}.png") for px in (16, 32)]
+        big.save(OUT / "favicon.ico", sizes=[(16, 16), (32, 32), (48, 48)], append_images=small)
+    manifest = {"name": NAME, "short_name": "WAISS", "description": DESC, "start_url": "/", "display": "browser",
+                "background_color": "#F5F3EE", "theme_color": "#F5F3EE",
+                "icons": [{"src": f"/icons/icon-{px}.png", "sizes": f"{px}x{px}", "type": "image/png"} for px in (192, 512)]}
+    (OUT / "site.webmanifest").write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8")
+    ICONS.extend(['<link rel="icon" href="{p}favicon.ico" sizes="16x16 32x32 48x48">',
+                  '<link rel="apple-touch-icon" href="{p}apple-touch-icon.png">',
+                  '<link rel="manifest" href="{p}site.webmanifest">'])
 
 
 def main():
@@ -396,7 +667,8 @@ def main():
     OUT.mkdir()
     shutil.copytree(ROOT / "assets" / "fonts", OUT / "fonts")
     (OUT / "favicon.svg").write_text(favicon(), encoding="utf-8")
-    shutil.copy(ROOT / "exports" / "001" / "luma-cover.png", OUT / "og.png")
+    build_icons()
+    shutil.copy(ROOT / "assets" / "logo" / "telos-circle.svg", OUT / "telos-circle.svg")  # Organization logo (JSON-LD)
     for f in ("Dockerfile", "nginx.conf"):  # dist/ deploys as it is: Coolify builds this Dockerfile
         shutil.copy(ROOT / "deploy" / f, OUT / f)
 
@@ -406,8 +678,6 @@ def main():
         (d / f'waiss-{ed["slug"]}.ics').write_text(ics(ed), encoding="utf-8", newline="")
         if ed["slides"]:
             deck_html = (ROOT / "build" / ed["deck"] / "index.html").read_text(encoding="utf-8")
-            assert D.FONTS in deck_html, "deck does not use tools/deck.py's FONTS"
-            (d / "index.html").write_text(deck_html.replace(D.FONTS, FONT_LINK.format(p="../")), encoding="utf-8")
             if (ROOT / "build" / ed["deck"] / "media").exists():  # videos the deck fetches on click
                 shutil.copytree(ROOT / "build" / ed["deck"] / "media", d / "media")
             png = ROOT / "exports" / ed["deck"]
@@ -427,29 +697,58 @@ def main():
             ed["pdf"] = pdf.exists()
             if ed["pdf"]:
                 shutil.copy(pdf, d / f'waiss-{ed["slug"]}-slides.pdf')
+            (d / "slides.md").write_text(slides_text(ed, deck_html), encoding="utf-8")
         for t in ed.get("talks") or []:
             src = talk_src(t)
             if src and not t.get("url"):
                 (d / "talks").mkdir(exist_ok=True)
                 (shutil.copytree if t.get("html") else shutil.copy)(ROOT / src, d / "talks" / Path(src).name)
 
+        # preview images: 1200×630 for link previews, 16:9 and 1:1 for the Event in JSON-LD
+        title_png = ROOT / "exports" / (ed["deck"] or "-") / "01-titel.png"
+        cover = ROOT / "exports" / f'{ed["num"]:03d}' / "luma-cover.png"
+        ed["images"] = []
+        if title_png.exists():
+            og_crop(title_png, d / "og.jpg")
+            og_crop(title_png, d / "cover-16x9.jpg", 1200, 675)
+            ed["images"].append(f'{SITE}/{ed["slug"]}/cover-16x9.jpg')
+        elif cover.exists():
+            og_crop(cover, d / "og.jpg")
+        if cover.exists():
+            og_crop(cover, d / "cover-1x1.jpg", 1080, 1080)
+            ed["images"].append(f'{SITE}/{ed["slug"]}/cover-1x1.jpg')
+        if ed["slides"]:  # after the PDF check: the head and slides.md link to it
+            (d / "index.html").write_text(deck_page(deck_html, ed), encoding="utf-8")
+    latest = next((OUT / e["slug"] / "og.jpg" for e in eds[::-1] if (OUT / e["slug"] / "og.jpg").exists()), None)
+    if latest:
+        shutil.copy(latest, OUT / "og.jpg")
+    for e in eds:
+        e["images"] = e["images"] or [f"{SITE}/og.jpg"]
+
     master = ROOT / "build" / "master" / "index.html"
     if master.exists():
         (OUT / "master").mkdir()
-        (OUT / "master" / "index.html").write_text(
-            master.read_text(encoding="utf-8").replace(D.FONTS, FONT_LINK.format(p="../")), encoding="utf-8")
+        (OUT / "master" / "index.html").write_text(deck_page(master.read_text(encoding="utf-8"), master=True),
+                                                  encoding="utf-8")
 
-    desc = "WAISS – Wiener AI Software Stammtisch: a monthly get-together in Vienna for everyone who builds with AI. By Telos Circle."
     body = hero() + format_(eds, today) + editions(eds, today) + slides(eds) + contribute(eds)
-    (OUT / "index.html").write_text(page("WAISS – Wiener AI Software Stammtisch", desc, body, eds), encoding="utf-8")
+    (OUT / "index.html").write_text(page(f"{NAME} | AI meetup in Vienna", DESC, body, eds, ld=site_ld(eds)),
+                                    encoding="utf-8")
     (OUT / "privacy").mkdir()
     (OUT / "privacy" / "index.html").write_text(
-        page("Privacy – WAISS", "Privacy policy of waiss.teloscircle.com", privacy(eds), eds, "../", SITE + "/privacy/"),
+        page("Privacy – WAISS", "Privacy policy of waiss.teloscircle.com: no cookies, no analytics, no tracking.",
+             privacy(eds), eds, "../", SITE + "/privacy/"),
         encoding="utf-8")
     (OUT / "404.html").write_text(
-        page("Not found – WAISS", desc, '<section class="legal" data-cam="1.0,0.6,0,0" data-cam-m="0.6,0,0.3,0"><div class="wrap narrow">'
+        page("Not found – WAISS", DESC, '<section class="legal" data-cam="1.0,0.6,0,0" data-cam-m="0.6,0,0.3,0"><div class="wrap narrow">'
              '<div class="eyebrow">404</div><h2>Nothing here.</h2><p><a class="btn" href="/">Back to WAISS</a></p></div></section>',
-             eds, "/"), encoding="utf-8")
+             eds, "/", robots="noindex"), encoding="utf-8")
+
+    (OUT / "robots.txt").write_text(ROBOTS, encoding="utf-8")
+    (OUT / "sitemap.xml").write_text(sitemap(eds, today), encoding="utf-8")
+    (OUT / "llms.txt").write_text(llms(eds, today), encoding="utf-8")
+    texts = [(OUT / e["slug"] / "slides.md").read_text(encoding="utf-8") for e in eds[::-1] if e["slides"]]
+    (OUT / "llms-full.txt").write_text(llms(eds, today, texts), encoding="utf-8")
     n = sum(1 for _ in OUT.rglob("*") if _.is_file())
     print(f"built {OUT} ({n} files, today {today} in Vienna)")
 

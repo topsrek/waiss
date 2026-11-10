@@ -73,6 +73,11 @@ npm run build          # deck + slide PNGs + site -> dist/
 An edition is "upcoming" up to and including its day and "past" from the next day (Vienna time). The page
 decides this live in the browser, and the nightly build does the same for visitors without JavaScript.
 
+For search engines and language models the build also writes `robots.txt`, `sitemap.xml`, JSON-LD (Organization,
+EventSeries, one Event per edition), `/llms.txt`, `/llms-full.txt` and a text version of every deck (`/<n>/slides.md`),
+all from the same edition data. Favicons: `favicon.svg` comes from `favicon()` in `tools/site.py`; the PNG sizes are
+rendered once into `assets/icons/` with `npm run icons`.
+
 Deployment: `.github/workflows/site.yml` builds every pull request. On `main` it pushes `dist/` (with `deploy/Dockerfile`,
 nginx) to the `site` branch, which Coolify on the Telos Hetzner server serves and redeploys on every new commit.
 

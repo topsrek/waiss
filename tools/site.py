@@ -607,10 +607,44 @@ def og_crop(src, dst, w=OG_W, h=OG_H):
 
 
 # ------------------------------------------------------------------------------------- page
+SPIKE = 0.8  # uSpike on the site
+
+
+def blob_shader():
+    """The deck's blob shader with the spike geometry as uniforms (computed here) instead of local arrays that
+    initSpikes() fills per pixel: the same picture, about 30 % faster on phones, where dynamically indexed local
+    arrays are slow. Valid because deck.FS fixes the spikes in object space and the site keeps uSpike at SPIKE."""
+    fs = D.FS
+    assert "float facing = dot(vec3(n.x, 0.9394 * n.y + 0.3429 * n.z, -0.3429 * n.y + 0.9394 * n.z)" in fs
+    rx = r"gDir\[(\d+)\] = normalize\(vec3\(([-\d.]+), ([-\d.]+), ([-\d.]+)\)\); gTip\[\d+\] = spikeTip\(gDir\[\d+\], ([\d.]+), ([\d.]+)\);"
+    spikes = re.findall(rx, fs)
+    assert len(spikes) == 14
+    cam = [0, 0.35, 4.6]
+    cam = [c / sum(x * x for x in cam) ** .5 for c in cam]
+    dirs, tips = [], []
+    for _, *v in spikes:
+        x, y, z, ln, r = map(float, v)
+        n = [c / (x * x + y * y + z * z) ** .5 for c in (x, y, z)]
+        facing = n[0] * cam[0] + (0.9394 * n[1] + 0.3429 * n[2]) * cam[1] + (-0.3429 * n[1] + 0.9394 * n[2]) * cam[2]
+        t = min(1, max(0, (facing - 0.42) / 0.36))
+        k = 1 - t * t * (3 - 2 * t)                            # spikeTip(), as in the shader
+        m = 0.55 + (1.08 + 0.32 * ln * SPIKE - 0.55) * k
+        dirs += [round(c, 6) for c in n]
+        tips += [round(c * m, 6) for c in n] + [round(r * 1.15 * (0.7 + 0.3 * k), 6)]
+    decl = "vec3 gDir[14]; vec4 gTip[14];"
+    assert fs.count(decl) == 1
+    fs = re.sub(r"\n  gDir\[\d+\] = normalize[^\n]*", "", fs.replace(decl, "uniform vec3 gDir[14]; uniform vec4 gTip[14];"))
+    assert "gDir[0] =" not in fs
+    return {"fs": fs, "dirs": dirs, "tips": tips, "spike": SPIKE}
+
+
+BLOB_JSON = json.dumps({**blob_shader(), "presets": R.PRESETS, "variant": D.VARIANT})
+
+
 def page(title, desc, body, eds, prefix="", canonical=SITE + "/", robots=None, ld=None):
     css = (ROOT / "tools" / "site.css").read_text(encoding="utf-8")
     js = (ROOT / "tools" / "site.js").read_text(encoding="utf-8")
-    blob = json.dumps({"fs": D.FS, "presets": R.PRESETS, "variant": D.VARIANT})
+    blob = BLOB_JSON
     return f'''<!doctype html>
 <html lang="en">
 <head>

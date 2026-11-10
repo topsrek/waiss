@@ -146,9 +146,11 @@ def hack_chip(text, font, bg, fg, size=34):
 
 
 def l_orga(ed):
-    w = ed.get("wifi")
-    wlan = (qr_tile(wifi_payload(w), "WLAN", f'{w["ssid"]}<br>{w["password"]}', size=400) if w
-            else qr_tile(None, "WLAN", "[Network]<br>[Password]", size=400))
+    # "wifi" in the edition: off unless set. false / missing = no WLAN tile, true = placeholder tile,
+    # {"ssid", "password"} = tile with a join-the-network QR code.
+    w = ed.get("wifi") or False
+    wlan = ("" if w is False else qr_tile(None, "WLAN", "[Network]<br>[Password]", size=400) if w is True
+            else qr_tile(wifi_payload(w), "WLAN", f'{w["ssid"]}<br>{w["password"]}', size=400))
     ln = qr_tile(ed["links"]["linkedin"], "LinkedIn", "/in/pwimberger",
                  data_uri("assets/logo/linkedin.svg", "image/svg+xml", INK), 200, side=True)
     photo = data_uri("assets/people/peter.webp", "image/webp")
@@ -172,7 +174,7 @@ def l_orga(ed):
           '<div class="eyebrow" style="font-size:18px;margin-bottom:6px">Projects</div>'
           '<div style="font-size:30px;font-weight:500">Intercortex, Machine Literacy</div></div>'
         + f'<div class="abs" style="left:870px;top:790px">{ln}</div>'
-        + f'<div class="abs" style="left:1400px;top:190px">{wlan}</div>')
+        + (f'<div class="abs" style="left:1400px;top:190px">{wlan}</div>' if wlan else ""))
     return (0.7, 0.72, -0.58, 200), html
 
 
@@ -739,6 +741,190 @@ def l_timeline(ed, cat="Releases", head="", model=None, lanes=(), since="2026-10
     return cam, html
 
 
+def l_ranges(ed, cat="", model=None, head="", ymin=0.8, ymax=2.2, yticks=(), fmt="${:.1f}T", points=(), events=(),
+             note="", top=430, H=470):
+    """A number over time as ranges, one column per data point (dates are labels, not a linear axis, so a busy week
+    still gets room). points = [(date label, low, high, value label, source, kind)], kind "filed"/"round" (ink) or
+    "talk" (muted, reported investor talk): a bar from low to high, a dot when low == high, a thin line joins the
+    midpoints, value + source above. events = [(position between columns, e.g. 4.5, label, row)]: dashed lines."""
+    W, L, Rr, T, B = CONTENT_RIGHT - 120, 90, 10, 80, 50
+    n = len(points)
+    X = lambda i: L + (i + .5) * (W - L - Rr) / n
+    Y = lambda v: T + (ymax - v) / (ymax - ymin) * (H - T - B)
+    out = "".join(f'<line x1="{L}" x2="{W - Rr}" y1="{Y(v):.1f}" y2="{Y(v):.1f}" stroke="#D9D5CC" stroke-width="1"/>'
+                  f'<text x="{L - 14}" y="{Y(v) + 7:.1f}" text-anchor="end" class="ax">{fmt.format(v)}</text>' for v in yticks)
+    for pos, lab, row in events:
+        out += (f'<line x1="{X(pos):.1f}" x2="{X(pos):.1f}" y1="{T - 30 - 26 * row}" y2="{H - B}" stroke="{MUTED}" '
+                f'stroke-width="1.5" stroke-dasharray="5 6"/><text x="{X(pos) + 8:.1f}" y="{T - 36 - 26 * row}" class="ev">{lab}</text>')
+    out += (f'<polyline points="{" ".join(f"{X(i):.1f},{Y((p[1] + p[2]) / 2):.1f}" for i, p in enumerate(points))}" '
+            f'fill="none" stroke="#C9C5BB" stroke-width="2"/>')
+    for i, (d, lo, hi, val, src, kind) in enumerate(points):
+        x, on = X(i), kind in ("filed", "round")
+        col = INK if on else MUTED
+        if hi > lo:
+            out += (f'<line x1="{x:.1f}" x2="{x:.1f}" y1="{Y(hi):.1f}" y2="{Y(lo):.1f}" stroke="{col}" stroke-width="12" '
+                    f'stroke-linecap="round"/>')
+        else:
+            out += (f'<circle cx="{x:.1f}" cy="{Y(lo):.1f}" r="10" '
+                    + (f'fill="#F5F3EE" stroke="{INK}" stroke-width="4"/>' if kind == "round" else f'fill="{col}"/>'))
+        out += (f'<text x="{x:.1f}" y="{Y(hi) - 46:.1f}" text-anchor="middle" class="lb{"" if on else " m"}">{val}</text>'
+                f'<text x="{x:.1f}" y="{Y(hi) - 22:.1f}" text-anchor="middle" class="ev">{src}</text>'
+                f'<text x="{x:.1f}" y="{H - 14}" text-anchor="middle" class="ax">{d}</text>'
+                f'<line x1="{x:.1f}" x2="{x:.1f}" y1="{H - B}" y2="{H - B + 8}" stroke="{INK}" stroke-width="2"/>')
+    svg = (f'<svg viewBox="0 0 {W} {H}" width="{W}" height="{H}" style="overflow:visible;display:block">'
+           f'<style>.ax{{font:400 19px "IBM Plex Mono",monospace;fill:{MUTED};letter-spacing:.04em}}'
+           f'.lb{{font:700 28px Archivo,sans-serif;fill:{INK}}}.lb.m{{font-weight:500;fill:{MUTED}}}'
+           f'.ev{{font:500 18px "IBM Plex Mono",monospace;fill:{MUTED};letter-spacing:.02em}}</style>{out}'
+           f'<line x1="{L}" x2="{L}" y1="{T - 10}" y2="{H - B}" stroke="{INK}" stroke-width="2"/>'
+           f'<line x1="{L}" x2="{W - Rr}" y1="{H - B}" y2="{H - B}" stroke="{INK}" stroke-width="2"/></svg>')
+    title = (model_h(model) + subline(head)) if model else f'<h2 style="font-size:{TITLE_PX}px;margin-top:16px">{head}</h2>'
+    html = (f'<div class="abs" style="left:120px;top:{HEAD_TOP}px;width:1300px">{eyebrow(cat)}{title}</div>'
+            f'<div class="abs" style="left:120px;top:{top}px">{svg}</div>'
+            f'<div class="abs mono" style="left:120px;bottom:{CORNER + 4}px;width:1380px;font-size:19px;line-height:1.3;'
+            f'letter-spacing:.04em">{note}</div>')
+    return CONTENT_CAM, html
+
+
+# ------------------------------------------------------------------ show & tell: a looser frame for people's own content
+# A show & tell slide is a header (the talk's category, big, top left; speaker top right of it) over one rounded
+# "stage" that holds whatever the speaker brings: a logo, screenshots, code, a tweet, a demo. The stage is light
+# (TILE_BG) or ink; the blob sits small on its top-right corner, half hidden behind it, and stays there for the whole
+# talk. st_frame() is the frame alone (body = any HTML, laid out in a 1760 x 770 box); the st_* layouts below are
+# common fillings of it.
+ST_X, ST_TOP, ST_BOTTOM = 80, 230, 80
+ST_W, ST_H = 1920 - 2 * ST_X, 1080 - ST_TOP - ST_BOTTOM  # 1760 x 770
+ST_CAM = (0.19, 0.745, 0.3, 40)  # blob perched on the stage's top-right corner
+CREAM = "#F5F3EE"
+
+
+def st_frame(cat, body, tone="light", pad=72, speaker="Peter Wimberger", center=False):
+    dark = tone == "ink"
+    bg, fg = (INK, CREAM) if dark else (TILE_BG, INK)
+    lay = "display:flex;align-items:center;justify-content:center;" if center else ""
+    html = (f'<div class="abs" style="left:{ST_X}px;top:58px"><div class="mono" style="font-size:22px">Show &amp; Tell'
+            f'{" &#183; " + speaker if speaker else ""}</div>'
+            f'<h2 style="font-size:96px;margin-top:14px;white-space:nowrap">{cat}</h2></div>'
+            f'<div class="abs stage" style="left:{ST_X}px;top:{ST_TOP}px;width:{ST_W}px;height:{ST_H}px;'
+            f'padding:{pad}px;background:{bg};color:{fg};{lay}">{body}</div>')
+    return ST_CAM, html
+
+
+def st_ph(label, w="100%", h="100%", dark=False, extra=""):
+    """Dashed placeholder box for an image / screenshot that is not there yet."""
+    c = "rgba(245,243,238,.5)" if dark else MUTED
+    return (f'<div style="width:{w};height:{h};border:2px dashed {c};border-radius:24px;display:flex;align-items:center;'
+            f'justify-content:center;{extra}"><span class="mono" style="font-size:22px;color:{c}">{label}</span></div>')
+
+
+def st_img(src, w="100%", h="100%", fit="contain", extra=""):
+    if not src:
+        return st_ph("[Image]", w, h, extra=extra)
+    ext = src.rsplit(".", 1)[-1]
+    mime = {"jpg": "image/jpeg", "svg": "image/svg+xml"}.get(ext, f"image/{ext}")
+    return f'<img src="{data_uri(src, mime)}" alt="" style="width:{w};height:{h};object-fit:{fit};{extra}">'
+
+
+def st_cover(ed, cat="[Category]", logo=None, name="[Tool]", tag="[One line: what it is]", url=""):
+    """Talk opener: the tool's logo, its name right of it, one line under the name."""
+    body = (f'<div style="display:flex;align-items:center;gap:72px">'
+            f'<div style="width:300px;height:300px;flex:none">{st_img(logo) if logo else st_ph("[Logo]")}</div>'
+            f'<div><h2 style="font-size:190px;line-height:.9">{name}</h2>'
+            f'<div style="font-size:42px;font-weight:500;color:{MUTED};margin-top:30px">{tag}</div>'
+            + (f'<div class="mono" style="font-size:24px;color:{INK};margin-top:26px">{url}</div>' if url else "")
+            + '</div></div>')
+    return st_frame(cat, body, center=True)
+
+
+_HAND = (f'<svg viewBox="0 0 24 24" width="120" height="120" fill="none" stroke="{INK}" stroke-width="1.4" '
+         f'stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M18 11V6a2 2 0 0 0-4 0v5"/>'
+         f'<path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/>'
+         f'<path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>')
+
+
+def st_poll(ed, cat="[Category]", qs=("[Who uses it?]", "[Who has heard of it?]")):
+    """Show of hands: one big question per row, a hand in front."""
+    rows = "".join(f'<div style="display:flex;align-items:center;gap:56px;padding:48px 0;'
+                   f'{"border-top:2px solid " + INK if k else ""}">{_HAND}'
+                   f'<h2 style="font-size:110px">{q}</h2></div>' for k, q in enumerate(qs))
+    return st_frame(cat, f'<div style="width:100%">{rows}</div>', pad=96, center=True)
+
+
+def st_what(ed, cat="[Category]", term="[What it is, in a few words]", lead="[One sentence that explains it]",
+            facts=(("[Key]", "[Value]"),) * 4, picks=(("[Feature]", "[Why it matters to me]"),) * 3,
+            picks_label="Why I use it"):
+    """What the thing is: term + one sentence, a few hard facts (left), and the speaker's own picks (right, ink cards)."""
+    fx = "".join(f'<div style="display:flex;gap:28px;border-top:1px solid {MUTED};padding:16px 0">'
+                 f'<span class="mono" style="font-size:20px;width:190px;flex:none;padding-top:6px">{k}</span>'
+                 f'<span style="font-size:30px;font-weight:500;line-height:1.25">{v}</span></div>' for k, v in facts)
+    pk = "".join(f'<div style="background:{INK};color:{CREAM};border-radius:26px;padding:28px 36px;display:flex;gap:28px;'
+                 f'align-items:baseline"><span class="mono" style="font-size:22px;color:#B9B5AB">{k:02d}</span>'
+                 f'<div><div style="font-size:40px;font-weight:700;line-height:1.1">{t}</div>'
+                 f'<div style="font-size:27px;line-height:1.3;margin-top:8px;color:#D9D5CC">{w}</div></div></div>'
+                 for k, (t, w) in enumerate(picks, 1))
+    body = (f'<div style="display:grid;grid-template-columns:minmax(0,1fr) 700px;gap:72px;width:100%;height:100%">'
+            f'<div><h2 style="font-size:76px;line-height:1">{term}</h2>'
+            f'<div style="font-size:34px;line-height:1.3;margin:24px 0 36px;color:{MUTED}">{lead}</div>{fx}</div>'
+            f'<div style="display:flex;flex-direction:column;gap:22px">'
+            f'<div class="eyebrow" style="font-size:22px">{picks_label}</div>{pk}</div></div>')
+    return st_frame(cat, body)
+
+
+def st_person(ed, cat="[Category]", name="[Name]", photo=None, role="[@handle]", facts=("[Fact]",) * 4, tweet=None):
+    """Who's behind it: photo, name, a few facts; one tweet card on the right (tweet=False: none)."""
+    av = (f'<div style="width:200px;height:200px;flex:none;border-radius:50%;overflow:hidden;outline:2px solid {INK};'
+          f'outline-offset:8px">'
+          + (st_img(photo, fit="cover", extra="filter:grayscale(1)") if photo else st_ph("[Photo]", extra="border-radius:50%"))
+          + '</div>')
+    fx = "".join(f'<div style="display:flex;gap:22px;align-items:baseline;border-top:1px solid {MUTED};padding:16px 0">'
+                 f'<span class="mono" style="font-size:20px">{k:02d}</span><span style="font-size:32px;font-weight:500;'
+                 f'line-height:1.25">{f}</span></div>' for k, f in enumerate(facts, 1))
+    tw = ("" if tweet is False else
+          tweet_card(**{**dict(name=name, handle=role, text="[The tweet]", width=720, size=38), **(tweet or {})}))
+    body = (f'<div style="display:flex;gap:80px;width:100%;height:100%;align-items:center">'
+            f'<div style="flex:1;min-width:0"><div style="display:flex;gap:44px;align-items:center;margin-bottom:34px">{av}'
+            f'<div><h2 style="font-size:84px;white-space:nowrap">{name}</h2><div class="mono" style="font-size:24px;margin-top:14px">{role}</div>'
+            f'</div></div>{fx}</div>{tw}</div>')
+    return st_frame(cat, body)
+
+
+def st_shots(ed, cat="[Category]", shots=(("", "[Caption]"),), tone="ink"):
+    """1-3 screenshots side by side on the stage, each with a short caption below."""
+    dark = tone == "ink"
+    cap_c = "#B9B5AB" if dark else MUTED
+    cells = "".join(f'<figure style="margin:0;display:flex;flex-direction:column;gap:20px;min-width:0;height:100%">'
+                    f'<div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center">'
+                    + (st_img(src, extra="border-radius:14px") if src else st_ph("[Screenshot]", dark=dark))
+                    + f'</div><figcaption class="mono" style="font-size:22px;color:{cap_c};text-align:center">{cap}'
+                      f'</figcaption></figure>' for src, cap in shots)
+    body = (f'<div style="display:grid;grid-template-columns:repeat({len(shots)},minmax(0,1fr));gap:48px;'
+            f'width:100%;height:100%">{cells}</div>')
+    return st_frame(cat, body, tone=tone, pad=56)
+
+
+def st_demo(ed, cat="[Category]", text="Live demo", sub="[What you are about to see]"):
+    body = (f'<div style="text-align:center"><div class="mono" style="font-size:28px;color:#B9B5AB;display:flex;'
+            f'align-items:center;justify-content:center;gap:18px"><span class="rec"></span>Live</div>'
+            f'<h2 style="font-size:220px;margin-top:30px">{text}</h2>'
+            f'<div style="font-size:40px;color:#D9D5CC;margin-top:34px">{sub}</div></div>')
+    return st_frame(cat, body, tone="ink", center=True)
+
+
+def st_split(ed, cat="[Category]", title="[Concept]", sub="[One line]", left="", right="",
+             left_label="[Before]", right_label="[After]"):
+    """Concept slide: title + line on top, two panes below (code | diagram, before | after, problem | fix)."""
+    pane = lambda lab, inner, dark: (
+        f'<div style="display:flex;flex-direction:column;gap:16px;min-width:0;height:100%">'
+        f'<div class="eyebrow" style="font-size:22px">{lab}</div>'
+        f'<div style="flex:1;min-height:0;border-radius:26px;padding:36px 40px;'
+        f'{"background:" + INK + ";color:" + CREAM if dark else "border:2px solid " + INK};overflow:hidden">'
+        f'{inner or st_ph("[Code / diagram]", dark=dark)}</div></div>')
+    body = (f'<div style="display:flex;flex-direction:column;width:100%;height:100%">'
+            f'<h2 style="font-size:76px">{title}</h2><div style="font-size:34px;color:{MUTED};margin:16px 0 36px">{sub}</div>'
+            f'<div style="flex:1;min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:48px">'
+            f'{pane(left_label, left, True)}{pane(right_label, right, False)}</div></div>')
+    return st_frame(cat, body, pad=64)
+
+
 def sticker(fn, img, left, top, width, rot=-8):
     """Wrap a layout: put an image on top of it like a sticker (slight tilt, soft shadow, crisp pixels)."""
     def wrapped(ed, **kw):
@@ -761,7 +947,7 @@ MUSE = [
         meta="19:07 · 9 Nov 2026")),
     ("muse-bench", partial(
         l_bench, cat="Releases · Meta", model="Muse Ember", head="Haiku-level, at a third of the cost", lab_w=250,
-        panels=[("Intelligence Index", "Artificial Analysis, max effort",
+        panels=[("Intelligence Index", "Artificial Analysis v5, max effort",
                  [("Muse Ember", 36), ("Claude Haiku 5.5", 36), ("DeepSeek V4.1 Flash", 33), ("GLM-5.3-Flash", 28)],
                  {"max": 60, "fmt": "{:.0f}"}),
                 ("Cost per task", "USD per index task, lower is better",
@@ -801,8 +987,9 @@ FABLE = [
         lab_w=300, width=1150, top=430,
         panels=[(None, None,
                  [("Claude Fable 5.2", 64.6), ("Gemini 4 Carbon", 60.0), ("Claude Opus 5.5", 59.1), ("GPT-6 Astra", 56.9),
-                  ("GPT-6.1 Sol", 54.6), ("Claude Sonnet 5.5", 54.5), ("Muse Wonder Full", 50.1), ("Claude Fable 5.1", 49.2)],
-                 {"max": 70, "fmt": "{:.0f}", "row": 54, "bar": 32})],
+                  ("GPT-6.1 Sol", 54.6), ("Claude Sonnet 5.5", 54.5), ("GPT-6.1 Terra", 51.3), ("Gemini 4 Argon", 50.4),
+                  ("Muse Wonder Full", 50.1), ("Claude Fable 5.1", 49.2)],
+                 {"max": 70, "fmt": "{:.0f}", "row": 46, "bar": 28})],
         note=f"Index v5.0.1, measured independently, highest effort per model. Fable 5.1 &#8594; 5.2: +15 points in ten weeks. "
              f"Source: {AA_SRC}")),
     ("fable-eci", partial(
@@ -818,7 +1005,7 @@ FABLE = [
         cols=[("MODEL", 340, "left"), ("LAB", 200, "left"), ("INPUT", 150, "right"), ("OUTPUT", 150, "right"),
               ("COST / TASK*", 220, "right")],
         rows=[["Fable 5.2", "Anthropic", "$8.00", "$40.00", "$17.94"], ["Opus 5.5", "Anthropic", "$4.00", "$20.00", "$24.77"],
-              ["Sonnet 5.5", "Anthropic", "$2.00", "$10.00", "$16.18"], ["Haiku 5.5", "Anthropic", "$0.10", "$0.50", "$3.18"],
+              ["Sonnet 5.5", "Anthropic", "$2.00", "$10.00", "$16.18"], ["Haiku 5.5", "Anthropic", "$0.10", "$0.50", "$3.17"],
               ["GPT-6 Astra", "OpenAI", "$10.00", "$50.00", "$21.28"], ["GPT-6.1 Sol", "OpenAI", "$2.00", "$10.00", "$3.61"],
               ["GPT-6.1 Terra", "OpenAI", "$1.00", "$5.00", "$2.94"],
               ["DeepSeek V4.1 Flash", "DeepSeek", "$0.30", "$1.20", "$0.66"], ["Muse Ember", "Meta", "$0.10", "$0.50", "$0.15"]],
@@ -839,7 +1026,7 @@ FABLE = [
         rows=vals_rows(["anthropic/claude-fable-5-2", "anthropic/claude-sonnet-5-5", "google/gemini-4-carbon",
                         "anthropic/claude-opus-5-5", "google/gemini-4-argon", "meta/muse-wonder-full", "openai/gpt-6-astra"]),
         strong=("Fable 5.2", "Opus 5.5"), top=430, row_h=60,
-        note=f"Vals Index leaderboard, top 7. The top four are within one standard error (&#177;1.0 points) of each other. "
+        note=f"Vals Index leaderboard, top 7. The top four are within 1.2 points, their &#177;1 SE error bars overlap. "
              f"Source: {VALS_SRC}")),
     ("fable-community", partial(
         l_tweet_video, cat="Community", model="Fable 5.2", head="4.7&#215; less compute than Opus 5.5",
@@ -848,29 +1035,29 @@ FABLE = [
         meta="00:20 · 10 Nov 2026",
         video="assets/recap/dom-scholz-fable-vs-opus.mp4", poster="assets/recap/dom-scholz-fable-vs-opus.jpg")),
     ("fable-zitat", partial(
-        l_statement, text="&#8220;For most coding and knowledge tasks, we recommend starting with Opus 5.5, "
-                          "our strongest daily driver.&#8221;",
-        src="@claudeai, 9 Nov 2026", size=64, top=200, model="Opus 5.5")),
+        l_statement, text="&#8220;For most coding and knowledge tasks, we recommend that users start with Claude Opus 5.5, "
+                          "our strongest daily driver [&#8230;]&#8221;",
+        src="Anthropic, Fable 5.2 announcement, 9 Nov 2026", size=64, top=200, model="Opus 5.5")),
 ]
 
 
 # ----------------------------------------------------------------- recap: the month's releases at a glance
 RELEASES = [
     ("releases", partial(
-        l_timeline, cat="Releases · 1 Oct &#8211; 10 Nov 2026", head="Six labs, one month",
+        l_timeline, cat="Releases · 1 Oct &#8211; 10 Nov 2026", head="Eight labs, six weeks",
         today="2026-11-10",
         ticks=(("2026-10-01", "1 OCT"), ("2026-10-08", "8 OCT"), ("2026-10-15", "15 OCT"), ("2026-10-22", "22 OCT"),
                ("2026-10-29", "29 OCT"), ("2026-11-05", "5 NOV")),
         lanes=(("Anthropic", (("2026-10-07", "Haiku 5.5", "pub"), ("2026-11-09", "Fable 5.2", "pub"),
                               ("2026-11-09", "Mythos 5.2", "gated"))),
                ("OpenAI", (("2026-10-26", "GPT-6.1 Terra", "pub"), ("2026-10-30", "GPT-6 Rosalind", "gated"),
-                           ("2026-11-04", "GPT Image 2.6", "pub"), ("2026-11-05", "GPT-6 Cyber", "gated"))),
+                           ("2026-11-05", "ChatGPT Images 2.6", "pub"), ("2026-11-05", "GPT-6 Cyber", "gated"))),
                ("Google", (("2026-10-13", "Gemini 4 Argon", "pub"), ("2026-10-27", "Genie 4", "gated"),
                            ("2026-10-28", "Gemini 4 Carbon", "gated"))),
                ("Meta", (("2026-10-12", "Muse Wonder", "pub"), ("2026-10-15", "Muse Spark Open", "open"), ("2026-11-09", "Muse Ember", "pub"))),
                ("Mistral", (("2026-10-06", "Large 4 preview", "pub"), ("2026-10-29", "Mistral Large 4", "open"))),
-               ("China", (("2026-10-17", "DeepSeek V4.1 Flash", "open"), ("2026-10-23", "Kimi K3.1 Pro", "pub"), ("2026-11-04", "K3.1 weights", "open"),
-                          ("2026-11-06", "Qwen4 teaser", "teaser")))),
+               ("China", (("2026-10-17", "DeepSeek Flash 1017", "open"), ("2026-10-23", "Kimi K3.1 Pro", "pub"), ("2026-11-04", "K3.1 weights", "open"),
+                          ("2026-11-06", "Qwen teaser", "teaser")))),
         note="Ink dot = available to everyone &#183; diamond = open weights &#183; hollow = selected customers only "
              "(cyber and life-science programs, trusted testers) &#183; dashed = announced only. Argon: date of general availability.")),
 ]
@@ -891,14 +1078,15 @@ GOOGLE = [
              "<br><br>Following Argon&#8217;s release just two weeks ago, Carbon shows the pace at which we&#8217;re pushing the "
              "frontier, it ranks #1 on the recently updated v5.0 of @ArtificialAnlys Intelligence Index at 59. [&#8230;]"
              "<br><br>Some trusted cyber defenders will get access starting this week.",
-        meta="18:01 · 28 Oct 2026 · 7.0M views")),
+        meta="18:01 · 28 Oct 2026")),
     ("google-aa", partial(
         l_bench, cat="Benchmarks · Artificial Analysis", model="Gemini 4 Carbon", head="Google is back: #2, behind Fable 5.2",
         lab_w=300, width=1150, top=430, hi=1,
         panels=[(None, None,
                  [("Claude Fable 5.2", 65), ("Gemini 4 Carbon", 60), ("Claude Opus 5.5", 59), ("GPT-6 Astra", 57),
-                  ("GPT-6.1 Sol", 55), ("GPT-6.1 Terra", 51), ("Gemini 4 Argon", 50)],
-                 {"max": 70, "fmt": "{:.0f}", "row": 58, "bar": 34})],
+                  ("GPT-6.1 Sol", 55), ("Claude Sonnet 5.5", 55), ("GPT-6.1 Terra", 51), ("Gemini 4 Argon", 50),
+                  ("Muse Wonder Full", 50)],
+                 {"max": 70, "fmt": "{:.0f}", "row": 48, "bar": 30})],
         note=f"Highest effort per model. Carbon was #1 from 28 Oct until Fable 5.2 on 9 Nov, and still has no public API. "
              f"Argon: $2 / $10 until 30 Nov, then $4 / $20, up to 1M output tokens. Source: {AA5}")),
 ]
@@ -909,7 +1097,7 @@ CHINA = [
         name="Kimi.ai", handle="@Kimi_Moonshot", avatar="assets/recap/kimi-avatar.jpg",
         text="Releasing the model weights of Kimi K3.1 Pro: huggingface.co/moonshotai/Kimi-K3.1-Pro<br>"
              "We&#8217;ll keep advancing open intelligence.",
-        meta="17:00 · 4 Nov 2026 · 1.4M views")),
+        meta="17:00 · 4 Nov 2026")),
     ("kimi-bench", partial(
         l_bench, cat="Benchmarks · Moonshot", model="Kimi K3.1 Pro", head="Open weights, level with Opus 5.5", lab_w=200,
         panels=[("Terminal-Bench 4.0", "Agentic coding in a terminal",
@@ -918,7 +1106,7 @@ CHINA = [
                  [("Kimi K3.1 Pro", 51.7), ("Opus 5.5", 46.3), ("Fable 5.1", 45.6), ("GPT-6 Astra", 42.5)]),
                 ("HLE, with tools", "Humanity&#8217;s Last Exam, full",
                  [("Kimi K3.1 Pro", 70.0), ("Opus 5.5", 67.7), ("Fable 5.1", 65.6), ("GPT-6 Astra", 57.2)])],
-        note="Vendor-reported, compared with Fable 5.1, not 5.2. Measured independently: 46 on the AA Intelligence Index, "
+        note="Vendor-reported, compared with Fable 5.1, not 5.2. Measured independently: 46 on the AA Intelligence Index v5, "
              "#1 open weights, #10 overall. 2.8T parameters, 104B active, weights 1.56 TB; $2 / $10 per 1M tokens. "
              "Sources: Moonshot (23 Oct), artificialanalysis.ai")),
     ("deepseek-bench", partial(
@@ -928,7 +1116,7 @@ CHINA = [
                 ("DeepSWE v1.1", "Software engineering", [("Flash 1017", 77.0), ("Flash, Sep", 74.2)]),
                 ("HLE, no tools", "Humanity&#8217;s Last Exam", [("Flash 1017", 42.6), ("Flash, Sep", 36.8)])],
         note="Vendor-reported. 33 on the AA Intelligence Index v5, #2 open weights. MIT license, weights on Hugging Face the same day; "
-             "$0.30 / $1.20 per 1M tokens. Its uncensored copies: 200k+ downloads in 30 days. Sources: DeepSeek, artificialanalysis.ai, Hugging Face")),
+             "$0.30 / $1.20 per 1M tokens. Its uncensored copies: ~1M downloads in 30 days. Sources: DeepSeek, artificialanalysis.ai, Hugging Face")),
 ]
 
 MISTRAL = [
@@ -938,15 +1126,15 @@ MISTRAL = [
         name="Mistral AI", handle="@MistralAI", avatar="assets/recap/mistralai-avatar.jpg",
         text="Meet Mistral Large 4, aka Le Chonk.<br><br>&#8226; 1T parameters, natively multimodal. 49B active.<br>"
              "It is the best open weights model from US or Europe on aggregated benchmarks.<br>"
-             "&#8226; Forged in Europe end-to-end and is deployable from Europe via our own Mistral Cloud infrastructure.",
-        meta="15:06 · 6 Oct 2026 · 5.8M views")),
+             "[&#8230;]<br>&#8226; Forged in Europe end-to-end and is deployable from Europe via our own Mistral Cloud infrastructure.",
+        meta="15:06 · 6 Oct 2026")),
     ("mistral-aa", partial(
         l_bench, cat="Benchmarks · Artificial Analysis · open weights", model="Mistral Large 4",
         head="Best open model outside China, by one point", lab_w=330, width=1250, top=400, hi=10,
         panels=[(None, None,
                  [("Claude Fable 5.2 &#183; closed", 65), ("Kimi K3.1 Pro &#183; CN", 46), ("DeepSeek V4.1 Flash &#183; CN", 33),
                   ("GLM-5.3 &#183; CN", 32), ("MiMo-V2.6-Pro &#183; CN", 30), ("Ling 3.1 Flash &#183; CN", 30),
-                  ("MiniMax-M3.1-Flash &#183; CN", 29), ("Step 5 Preview &#183; CN", 28), ("GLM-5.3-Flash &#183; CN", 28),
+                  ("MiniMax-M3.1-Flash &#183; CN", 29), ("Step 5 Preview &#183; CN", 29), ("GLM-5.3-Flash &#183; CN", 28),
                   ("MiMo-V2.6-Flash &#183; CN", 27), ("Mistral Large 4 &#183; EU", 26), ("Muse Spark Open &#183; US", 25)],
                  {"max": 70, "fmt": "{:.0f}", "row": 38, "bar": 22})],
         note=f"Fable 5.2 only for scale. Terminal-Bench 4.0: Mistral says 41%, AA measured 25%. Source: {AA5}")),
@@ -956,13 +1144,13 @@ AGENTS = [
     ("agents", partial(
         l_table, cat="Agents", head="Every lab has a personal agent", top=360, row_h=78,
         cols=[("AGENT", 300, "left"), ("LAB", 210, "left"), ("SINCE", 300, "left"), ("WHAT&#8217;S SPECIAL", 750, "left")],
-        rows=[["Muse", "Meta", "8 Sep", "First out: 10.9M downloads, 2.5M daily users by 20 Oct"],
+        rows=[["Gemini Spark", "Google", "19 May (I/O)", "Agentic assistant in Gmail and Google apps"],
+              ["Muse", "Meta", "8 Sep", "10.9M downloads by 20 Oct (Sensor Tower)"],
               ["Dots", "OpenAI", "29 Sep (DevDay)", "Always on, $100 / month"],
-              ["Gemini Agent", "Google", "8 Oct", "Multi-step tasks across Gmail, Docs, Sheets, Chrome"],
-              ["Claude Duet", "Anthropic", "21 Oct, preview", "Own iOS / Android app on Opus 5.5, US waitlist only"]],
+              ["Claude Duet", "Anthropic", "21 Oct, preview", "Own app on Opus 5.5, US waitlist only"]],
         strong=("Claude Duet",),
         note="It doesn&#8217;t wait for a prompt: it checks in on its own and keeps working after you leave. "
-             "Sources: Engadget, eesel, AI Business, Every")),
+             "Sources: Anthropic, Axios, eesel, TNW, TechTarget")),
     ("duet", partial(
         l_drei, cat="Agents · Anthropic · 21 Oct", model="Claude Duet", head="Late to the party, built for work",
         items=(("What it does", "Morning briefing",
@@ -975,52 +1163,52 @@ AGENTS = [
 
 SECURITY = [
     ("sandbox", partial(
-        l_table, cat="Security · OpenAI", model="Out of the sandbox", head="A research model reached the internet via DNS",
+        l_table, cat="Security · OpenAI", model="Out of the sandbox", head="Three escapes since May, the last one via DNS",
         top=440, row_h=74,
         cols=[("DATE", 170, "left"), ("WHAT HAPPENED", 1350, "left")],
-        rows=[["1 Jul", "First escape: agents interact with Hugging Face&#8217;s training repo; RL training paused for two weeks"],
-              ["20 Sep", "A research model uses a DNS misconfiguration to talk to a chatbot outside"],
-              ["25 Sep", "OpenAI pauses training, evaluation and tool use of its strongest models"],
-              ["1 Oct", "Training resumes"],
+        rows=[["26 May", "First escape: agents reach the internet through a flaw in OpenAI&#8217;s internal package server"],
+              ["9&#8211;19 Jul", "Agents get code execution on dozens of Hugging Face production servers, root on one"],
+              ["20 Sep", "A research model uses a DNS misconfiguration to talk to a chatbot outside; training paused"],
+              ["1 Oct", "Training resumes, 11 days after the pause began"],
               ["23 Oct", "&#8220;Securing our frontier model training environment&#8221;: frontier training now runs fully offline"]],
         strong=("20 Sep",),
         note="Instead of the live internet, an indexed cache: the &#8220;offline world&#8221;. Red-teaming found more ways out: "
-             "container escapes, covert channels between agents via timing on shared hardware. "
+             "sandbox escapes, covert channels between agents via timing on shared hardware. "
              "For builders: DNS is an exit too, not just HTTP. Sources: OpenAI, Forkast, Digital Applied")),
     ("948-funnel", partial(
         l_bench, cat="Security · OpenAI · 4 Nov", model="948 paths to root",
-        head="Agents found and patched 948 Linux kernel bugs in one run", lab_w=420, width=1300, top=440,
+        head="Agents found 948 Linux kernel root bugs and wrote a patch for each", lab_w=420, width=1300, top=440,
         panels=[(None, None,
                  [("Targets picked by scout agents", 5034), ("Candidate bugs, after 12 h", 2308),
-                  ("Reproduced in VMs, after 30 h", 1724), ("Unique root bugs, all patched", 948)],
+                  ("Reproduced in VMs, after 30 h", 1724), ("Unique root bugs, each with a patch", 948)],
                  {"max": 5100, "fmt": "{:,.0f}", "row": 76, "bar": 44})], hi=3,
-        note="40M+ lines of kernel code; the targets cover 2.8M of them (~7%). Every bug lets a local user become root; "
-             "none is exploitable remotely without access. Source: OpenAI, &#8220;A thousand fewer paths to root&#8221;")),
+        note="40M+ lines of kernel code; the targets cover 2.8M of them (~7%). Every bug lets a local user become root. "
+             "When the run ended, 61 were fixed upstream, the rest are being reported. Source: OpenAI, &#8220;A thousand fewer paths to root&#8221;")),
     ("948-preis", partial(
-        l_zahl, cat="Security · OpenAI", num="$1,279",
+        l_zahl, cat="Security · OpenAI", num="$1,280",
         text="per Linux root exploit, found and patched by agents. Pwn2Own pays around $20,000 for one. "
              "In July: 166 bugs at ~$3,100 each.",
         src="OpenAI, 4 Nov 2026: $1.21M API cost in total. July run: GPT-5.6 Sol, ~$514,000")),
     ("php2shell-tweet", partial(
-        l_tweet, cat="Security · 21 Oct", model="PHP2Shell", size=36, width=1300, name="FBI Cyber Division", handle="@FBICyberBranch",
+        l_tweet, cat="Security · 21 Oct", model="PHP2Shell", size=36, width=1300, name="FBI Cyber Branch", handle="@FBICyberBranch",
         avatar="assets/recap/fbicyber-avatar.jpg",
         text="Two critical vulnerabilities have been identified in PHP [&#8230;] could allow malicious cyber actors to remotely "
              "execute code in PHP core [&#8230;]<br><br>&#10145;&#65039; If an immediate update is not feasible it is recommended "
              "that organizations take the system offline until it can be fully mitigated.",
-        meta="16:59 · 21 Oct 2026 · 3.5M views")),
+        meta="16:59 · 21 Oct 2026")),
     ("php2shell-zeitleiste", partial(
         l_table, cat="Security · PHP core RCE, CVSS 9.2", model="PHP2Shell", head="Found by AI, exploited four days before the patch",
         top=440, row_h=64,
         cols=[("DATE", 170, "left"), ("WHAT HAPPENED", 1350, "left")],
         rows=[["1 Aug", "Calif finds the first bug with an LLM agent, in OpenAI&#8217;s &#8220;Patch the Planet&#8221; program"],
-              ["19 Aug", "Wiz finds it on its own (Gemini 4 Argon + GPT-5.6 Sol); WordPress and Drupal exploits two days later"],
+              ["19 Aug", "Wiz finds it on its own (Gemini 4 Argon + GPT-5.6 Sol); Drupal and WordPress exploits within two days"],
               ["18 Sep", "OpenAI Codex Security reports the same root cause"],
               ["17 Oct", "First exploitation attempts in Amazon&#8217;s honeypots"],
               ["20 Oct", "Leak: a post on HN, a tweet, and an exploit video Calif published by mistake"],
               ["21 Oct", "Patches: PHP 8.5.12 / 8.4.27 / 8.3.36 / 8.2.35; on CISA&#8217;s exploited list five days later"]],
         strong=("17 Oct",),
         note="Every PHP from 5.4 to 8.5; PHP runs ~70% of websites with a known server language. Government sites in the NL, "
-             "FI and FR went offline as a precaution. PHP Foundation: 100+ invalid or duplicate AI reports since July. "
+             "FI and FR went offline as a precaution. PHP Foundation: 100+ invalid or duplicate reports since July, as AI-assisted reports rise. "
              "Sources: Wiz, Calif, PHP Foundation, AWS")),
     ("sshole-zitat", partial(
         l_statement, model="SSHole", size=58, top=200,
@@ -1041,7 +1229,7 @@ SECURITY = [
         cols=[("NAME", 300, "left"), ("WHAT", 620, "left"), ("FOUND BY", 450, "left"), ("DATE", 130, "left")],
         rows=[["PHP2Shell", "PHP core, remote code exec", "AI agents: Calif, Wiz, OpenAI", "21 Oct"],
               ["Node2Shell", "Brotli decoder: Node.js, Python, .NET", "OpenAI Codex Security", "21 Oct"],
-              ["Plex2Shell", "Plex Media Server, four CVEs", "humans, no AI involved", "16 Oct"],
+              ["Plex2Shell", "Plex Media Server, four CVEs", "one researcher, &#8220;used LLMs heavily&#8221;", "16 Oct"],
               ["SSHole", "OpenSSH on musl, &#8220;the new SSH2SHELL&#8221;", "one researcher&#8217;s agent swarm", "5 Nov"],
               ["ssh2shell.com", "Teaser: &#8220;CVSS 10.0&#8221;, out 25 Dec", "anonymous, unverified", "24 Oct"],
               ["Terminal2Shell", "Parody site", "&#8212;", "9 Nov"]],
@@ -1051,10 +1239,10 @@ SECURITY = [
     ("terminal2shell", partial(
         l_tweet, cat="Security · Community · 9 Nov", model="Terminal2Shell", size=64, width=900, name="Tib3rius", handle="@0xTib3rius",
         avatar="assets/recap/tib3rius-avatar.jpg", text="We&#8217;re cooked.<br><br>terminal2shell.com",
-        meta="15:14 · 9 Nov 2026 · 2.1M views")),
+        meta="15:14 · 9 Nov 2026")),
 ]
 
-IPO_SRC = "S-1/A of 10 Nov 2026, CNBC, Reuters, Bloomberg (10 Nov)"
+IPO_SRC = "S-1/A of 10 Nov 2026, WSJ, CNBC, Reuters (10 Nov)"
 IPO = [
     ("ipo-tweet", partial(
         l_tweet, cat="Business · Anthropic · 9 Nov", model="Anthropic IPO", size=44, name="swyx", handle="@swyx",
@@ -1064,26 +1252,52 @@ IPO = [
         meta="20:44 · 9 Nov 2026")),
     ("ipo-zahlen", partial(
         l_table, cat="Business · Anthropic · filed today", model="Anthropic IPO", head="$70&#8211;78 a share, trading from 19 Nov",
-        top=440, row_h=62,
-        cols=[("", 360, "left"), ("", 420, "left"), ("", 760, "left")],
+        top=430, row_h=60,
+        cols=[("", 300, "left"), ("", 330, "left"), ("", 940, "left")],
         rows=[["Shares offered", "825M", "+ up to 124M if the banks use their greenshoe"],
-              ["Raise", "$58&#8211;64B", "~$74B with greenshoe"],
-              ["Valuation", "$0.92&#8211;1.02T", "fully diluted up to $1.4T; investors talked about $2T months ago"],
-              ["Next to it", "$26B placement", "at the IPO price: Google and Nvidia $10B each, AMD, Broadcom, Micron, Microsoft, TSMC"],
-              ["Dates", "18 / 19 Nov", "pricing / first trade on Nasdaq as ANT (CNBC, unnamed sources)"],
-              ["Last round", "$965B", "private, May 2026"]],
+              ["Raise", "$58&#8211;64B", "$61B at the $74 midpoint, ~$74B with greenshoe"],
+              ["Valuation", "~$1.33T", "fully diluted at the midpoint (WSJ); press estimates, not in the filing"],
+              ["Shares only", "$0.92&#8211;1.02T", "13.09B shares after the IPO &#215; price, no options"],
+              ["Next to it", "$26B placement", "at the IPO price: Google, Nvidia $10B each; AMD, Broadcom, Micron, MS, TSMC"],
+              ["Dates", "18 / 19 Nov", "pricing / first trade as ANT on Nasdaq (WSJ, CNBC sources)"],
+              ["Last round", "$965B", "private, May 2026; in October investors talked about $2T"]],
         strong=("Raise", "Valuation"),
         note=f"Overnight a first version (867M shares at $70&#8211;80, up to $69.3B) went out and was retracted as "
              f"&#8220;inaccurate&#8221;. First nine months of 2026: revenue $33.2B, operating loss $1.3B. Source: {IPO_SRC}")),
+    ("ipo-verlauf", partial(
+        l_ranges, cat="Business · Valuation talk over time", model="Anthropic IPO", head="From $2T talk to $1.3T on file",
+        yticks=(1.0, 1.5, 2.0),
+        points=[("28 MAY", 0.965, 0.965, "$0.97T", "private round", "round"),
+                ("13 AUG", 2.0, 2.0, "&#8805;$2T", "FT", "talk"),
+                ("18 SEP", 2.0, 2.0, "~$2T", "WSJ: IPO to Nov", "talk"),
+                ("15 OCT", 1.5, 1.5, "~$1.5T", "Reuters", "talk"),
+                ("2 NOV", 1.5, 1.6, "$1.5&#8211;1.6T", "WSJ", "talk"),
+                ("6 NOV", 1.1, 1.3, "$1.1&#8211;1.3T", "Bloomberg", "talk"),
+                ("10 NOV", 1.26, 1.41, "$1.26&#8211;1.41T", "filed range", "filed")],
+        events=[(4.42, "3 NOV midterms", 0), (4.58, "5 NOV Nasdaq &#8722;5.5%", 1)],
+        note="Fully diluted. Everything between the round and the filing is investor talk from unnamed sources. "
+             "15 Oct: investor day, growth slowing; 2 Nov: Q3 operating loss. 5 Nov: Nvidia &#8722;9.3%, chip index &#8722;12%. "
+             "Sources: Anthropic, FT, WSJ, Reuters, Bloomberg, CNBC, S-1/A")),
     ("ipo-rang", partial(
         l_bench, cat="Business · Largest IPOs ever", model="Anthropic IPO", head="Second only to SpaceX", lab_w=380, width=1300,
         top=440, hi=1,
         panels=[(None, None,
-                 [("SpaceX · Jun 2026", 75.0), ("Anthropic · top of range", 64.4), ("SK hynix · Jul 2026", 26.5),
+                 [("SpaceX · Jun 2026", 75.0), ("Anthropic · top of range", 64.4), ("SK hynix ADR · Jul 2026", 26.5),
                   ("Saudi Aramco · 2019", 25.6), ("Alibaba · 2014", 21.8), ("SoftBank Corp · 2018", 21.3)],
                  {"max": 80, "fmt": "${:.1f}B", "row": 64, "bar": 38})],
         note="Amount raised in the base deal, without greenshoe. Anthropic: 825M shares &#215; $78. "
              "Sources: Renaissance Capital, S-1/A of 10 Nov 2026")),
+    ("ipo-firmen", partial(
+        l_bench, cat="Business · Most valuable companies", model="Anthropic IPO", head="Between Tesla and Eli Lilly, fully diluted",
+        lab_w=400, width=1300, top=410, hi=11,
+        panels=[(None, None,
+                 [("Apple", 5.10), ("Nvidia", 4.31), ("Microsoft", 4.05), ("Alphabet", 3.52), ("Amazon", 2.89), ("TSMC", 2.02),
+                  ("SpaceX", 1.93), ("Saudi Aramco", 1.65), ("Meta", 1.64), ("Broadcom", 1.53), ("Tesla", 1.49),
+                  ("Anthropic &#183; fully diluted, $74", 1.33), ("Eli Lilly", 1.26), ("OpenAI &#183; private", 1.25),
+                  ("Anthropic &#183; shares only, $74", 0.97)],
+                 {"max": 5.5, "fmt": "${:.2f}T", "row": 30, "bar": 18})],
+        note="Close of 9 Nov (companiesmarketcap.com); OpenAI: Bloomberg, 6 Nov. Listed caps count shares only: "
+             "counted that way, Anthropic is about #16, behind Walmart and Samsung")),
 ]
 
 POLITICS = [
@@ -1095,8 +1309,8 @@ POLITICS = [
     ("midterms-zahlen", partial(
         l_drei, cat="Politics · US midterms", head="AI became a ballot issue",
         items=(("NBC exit poll", "76% against", "a new data center in their own community."),
-               ("Voters", "56% say", "AI and data centers were &#8220;decisive&#8221; or &#8220;important&#8221; for their vote."),
-               ("AI money", "$4.8M, lost", "Two AI PACs backed one Senate candidate in South Carolina. She lost.")))),
+               ("Voters", "56% say", "AI and data centers were &#8220;a crucial or major factor&#8221; in their vote."),
+               ("AI money", "$4.8M, lost", "Two pro-AI and pro-data-center PACs backed one candidate in South Carolina. She lost, 47 to 51.")))),
 ]
 
 EU = [
@@ -1109,8 +1323,8 @@ EU = [
               ["2 Dec 2027", "High-risk rules for Annex III systems: hiring, credit, education"],
               ["2 Aug 2028", "High-risk rules for AI in products (Annex I)"]],
         strong=("2 Dec 2026",),
-        note="The Digital Omnibus (Regulation (EU) 2026/1744, in force since 27 Jul) moved the high-risk rules back by over a year: "
-             "postponed, not dropped. Open question: who is Austria&#8217;s market surveillance authority? Sources: nisd2.eu, MEAN CEO")),
+        note="The Digital Omnibus (Regulation (EU) 2026/1744, in force since 27 Jul) moved the high-risk rules back by 12&#8211;16 months: "
+             "postponed, not dropped. New bans from 2 Dec 2026: non-consensual intimate deepfakes, CSAM generation. Open question: who is Austria&#8217;s market surveillance authority? Sources: nisd2.eu, MEAN CEO")),
 ]
 
 TERMS = [
@@ -1120,20 +1334,20 @@ TERMS = [
         items=(("7 Oct, JAMA Psychiatry:", "28 cases among ~216,000 patients at Vanderbilt. Rare, but 61% were first episodes, "
                                            "and in 64% the chatbot acted as an amplifier."),
                ("10 Oct, Elon Musk:", "&#8220;At various points this year, I&#8217;ve had AI or SI psychosis probably like half a dozen times.&#8221;"),
-               ("14 Oct, eight US states sue OpenAI:", "ChatGPT was built to agree and sold as safe, while the risks for "
-                                                       "vulnerable users were kept quiet.")),
+               ("14 Oct, eight US states sue OpenAI:", "ChatGPT was &#8220;designed to be agreeable&#8221;, and OpenAI "
+                                                       "misled users about its safety.")),
         note="Not a clinical diagnosis. Sources: JAMA Psychiatry (Bergson &amp; Sheffield, 7 Oct), A.V. Club (15 Oct), Just Security (15 Oct)")),
     ("term-abliterated", partial(
         l_text, cat="Term of the month", model="abliterated",
         head="An open model with its refusals cut out of the weights, no retraining", size=36,
         items=(("How:", "find the one direction in the network that makes the model say no, and project it out. "
                         "Ablation + obliterated."),
-               ("This month:", "an uncensored Mistral Large 4 on Hugging Face the day its weights came out. "
+               ("This month:", "an uncensored Mistral Large 4 on Hugging Face two days after its weights came out. "
                                "9,136 &#8220;abliterated&#8221; repos, 719 of them new in October."),
-               ("The catch:", "ProjectDiscovery hid a backdoor in an edited open model for under $50: inside Codex CLI it "
-                              "stole credentials 50 times out of 50, and still passed every eval.")),
-        note="Method: Arditi et al., NeurIPS 2024; name: Maxime Labonne. Sources: Hugging Face API (10 Nov), "
-             "ProjectDiscovery (6 Oct), Schneier (16 Oct), CBS News (2 Oct)")),
+               ("The catch:", "ProjectDiscovery hid a credential-stealing backdoor in an edited open model for under $50. "
+                              "In a Codex setup the trigger fired 50 times out of 50, normal accuracy stayed at 100%.")),
+        note="Method: Arditi et al., NeurIPS 2024; the name: FailSpy (2024), made popular by Maxime Labonne. "
+             "Sources: Hugging Face API (10 Nov), ProjectDiscovery (6 Oct), Schneier (16 Oct)")),
 ]
 
 TAKEAWAYS = [
@@ -1141,9 +1355,9 @@ TAKEAWAYS = [
         l_text, cat="Takeaways", head="What to do with this month", size=31,
         items=(("Test now:", "Fable 5.2 (hardest tasks), Muse Ember (subagents), Argon (long outputs, launch price until 30 Nov), "
                              "Mistral Large 4 (data stays in Europe)."),
-               ("Count per task, not per token:", "Ember and Haiku cost the same per token; per task Ember is 3&#215; cheaper."),
+               ("Count per task, not per token:", "Ember and Haiku cost the same per token; on AA&#8217;s index tasks Ember is 3&#215; cheaper."),
                ("Mix models:", "a big model plans, a small one executes. Every lab now ships a family built for exactly that."),
-               ("Harden:", "DNS is an exit too. Patch PHP, OpenSSH and Linux hosts: exploits now follow patches within hours."),
+               ("Harden:", "DNS is an exit too. Patch PHP, OpenSSH and your kernels: for PHP and OpenSSH, exploits came within hours."),
                ("EU deadline:", "label AI output of existing systems by 2 December 2026."))
     )),
 ]
@@ -1151,9 +1365,19 @@ TAKEAWAYS = [
 NEWS = [*GOOGLE, *CHINA, *MISTRAL, *AGENTS, *SECURITY, *IPO, *POLITICS, *EU, *TERMS, *TAKEAWAYS]
 
 QUESTIONS = [
+    ("decider", partial(
+        l_drei, cat="Discussion · Amazon · strandsagents.com, 9 Nov", model="Strands Decider",
+        head="Amazon runs a decision model in production. Do you use any?",
+        items=(("What it is", "Picks, doesn&#8217;t write",
+                "State + options in, a probability per option and a confidence out. &#8220;A decision model can&#8217;t generate text.&#8221;"),
+               ("In production", "Ticket routing",
+                "Amazon&#8217;s internal ticket system: each ticket to one of 20 labels, replacing Claude Sonnet 4.6. "
+                "A Gemma 4 E4B build on one A10G GPU."),
+               ("Result", "98% cheaper",
+                "$22,200 &#8594; $500 per million tickets, 4.2 s &#8594; 0.9 s per call: &#8220;millions of dollars&#8221; a year.")))),
     ("frage-agent", partial(l_frage, q="Would you give a personal agent your inbox?")),
     ("frage-zugang", partial(l_frage, q="The best models only for selected customers: fair, or a brake on small builders?", size=84)),
-    ("frage-ipo", partial(l_frage, q="A trillion dollars for Anthropic: bubble or justified?")),
+    ("frage-ipo", partial(l_frage, q="$1.3 trillion for Anthropic: bubble or justified?")),
     ("frage-rechenzentren", partial(l_frage, q="Could data centers become a fight in Austria too?")),
     ("frage-neu", partial(l_frage, q="Which tool or model did you discover this month?")),
 ]
@@ -1202,6 +1426,9 @@ MASTER = [
     ("talk", l_talk), ("statement", l_statement), ("frage", l_frage), ("tierlist", l_fullscreen), ("ende", l_ende),
 ]
 
+# the master deck's edition: placeholders only, nothing from a real edition except the permanent links
+MASTER_ED = {"edition": "#N", "datum": "[DD.MM.YYYY]", "zeit": "[18:00]", "ort": "[VENUE]", "wifi": False}
+
 
 def title_slide(ed):
     """Slide 1 comes from the canvas source (Main.dc.html) minus its own blob; the top line is smaller
@@ -1240,8 +1467,14 @@ def build(ed, layouts, dest, title):
     add("01-titel", cam, html)
     for k, (name, fn) in enumerate(layouts, start=2):
         cam, html = fn(ed)
-        full = getattr(fn, "func", fn) is l_fullscreen  # no chrome on a full-bleed image
-        add(f"{k:02d}-{name}", cam, html if full else html + chrome(k, n, ed, with_logo=name != "orga"))
+        base = getattr(fn, "func", fn)
+        if base is l_fullscreen:  # no chrome on a full-bleed image
+            add(f"{k:02d}-{name}", cam, html)
+        elif base.__name__.startswith("st_"):  # show & tell: its own header, only the slide number from the deck
+            add(f"{k:02d}-{name}", cam, html + f'<div class="abs mono" style="right:{CORNER}px;top:{CORNER - 24}px;'
+                                                f'font-size:22px">{k:02d} / {n:02d}</div>')
+        else:
+            add(f"{k:02d}-{name}", cam, html + chrome(k, n, ed, with_logo=name != "orga"))
 
     tpl = (ROOT / "tools" / "deck-template.html").read_text(encoding="utf-8")
     out = tpl
@@ -1263,7 +1496,7 @@ def build(ed, layouts, dest, title):
 def main():
     ed = json.loads(Path(sys.argv[1] if len(sys.argv) > 1 else ROOT / "editions" / "001.json").read_text(encoding="utf-8"))
     build(ed, LAYOUTS, ROOT / "build" / "deck", f'WAISS {ed["edition"]} – Slides')
-    build(ed, MASTER, ROOT / "build" / "master", "WAISS – Master slides")
+    build(MASTER_ED | {"links": ed["links"]}, MASTER, ROOT / "build" / "master", "WAISS – Master slides")
 
 
 if __name__ == "__main__":

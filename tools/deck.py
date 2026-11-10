@@ -191,6 +191,7 @@ def l_website(ed, url="https://waiss.teloscircle.com", repo="https://github.com/
     """The edition's website (slides, past editions) as a QR code, plus how to bring a talk next time.
     Links are real <a> elements: clicking one opens it instead of advancing the deck."""
     short = lambda u: u.replace("https://", "").rstrip("/")
+    QR = 300
     tel = data_uri("assets/logo/telos-circle.svg", "image/svg+xml")
     gh = data_uri("assets/logo/github.svg", "image/svg+xml", INK)
     env = (f'<svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="{INK}" stroke-width="2" '
@@ -198,12 +199,14 @@ def l_website(ed, url="https://waiss.teloscircle.com", repo="https://github.com/
     a = f'color:{INK};text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:8px'
     row = lambda icon, html: (f'<div style="display:flex;align-items:center;gap:26px;font-size:40px;font-weight:600;'
                               f'margin-top:34px">{icon}<span>{html}</span></div>')
-    html = (f'<div class="abs" style="left:120px;top:{HEAD_TOP}px;width:1300px">{eyebrow("Slides &amp; website")}'
+    qr = f'<div class="qr" style="--s:{QR}px"><div class="tile">{qr_art(url, tel)}</div></div>'
+    html = (f'<div class="abs" style="left:132px;top:{HEAD_TOP}px;display:flex;align-items:center;gap:64px">{qr}'
+            f'<div>{eyebrow("Slides &amp; website")}'
             f'<h2 style="font-size:{TITLE_PX}px;margin-top:16px"><a href="{url}" style="{a};text-decoration-thickness:4px">'
             f'{short(url)}</a></h2>'
-            f'<div style="font-size:34px;color:{MUTED};margin-top:14px">Tonight&#8217;s slides, past and upcoming editions.</div></div>'
-            f'<div class="abs" style="left:120px;top:420px">{qr_tile(url, "Website", short(url), tel, 400)}</div>'
-            f'<div class="abs" style="left:700px;top:420px;width:1000px">'
+            f'<div style="font-size:34px;color:{MUTED};margin-top:22px">Tonight&#8217;s slides, past and upcoming editions.</div></div></div>'
+            f'<div class="abs" style="left:120px;right:120px;top:{HEAD_TOP + QR + 60}px;border-top:2px solid {INK}"></div>'
+            f'<div class="abs" style="left:120px;top:{HEAD_TOP + QR + 100}px;width:1300px">'
             f'<h3 style="font-size:56px;font-weight:700;line-height:1.1;letter-spacing:-.01em">Want to present something next time?</h3>'
             + row(f'<img src="{gh}" alt="GitHub" style="width:44px;height:44px">',
                   f'Open a pull request on <a href="{repo}" style="{a}">{short(repo)}</a>')
@@ -1163,10 +1166,7 @@ LAYOUTS = [("orga", l_orga), ("agenda", l_agenda), ("website", l_website), *RELE
                       ("2026-09-22", "2026-09-30", "22&#8211;30 Sep: again", "start")),
                note="Every model in Epoch&#8217;s list, 10 Nov 2025 &#8211; 10 Nov 2026; filled = new best of that lab. "
                     "Since April, Anthropic has set a new lab best every 2&#8211;7 weeks. Source: epoch.ai/eci")),
-           ("diskussion-dominanz", partial(
-               l_labs, question="Will OpenAI &amp; Anthropic<br>still dominate in a year?", top=410,
-               note="Best Epoch Capabilities Index score per lab. A year ago: Google &#8722;6, Meta &#8722;19. "
-                    "Not in Epoch yet: Gemini 4 Carbon, 0.9 points behind Fable 5.2 on the Vals Index. Source: epoch.ai/eci")),
+           ("frage-dominanz", partial(l_frage, q="Will OpenAI &amp; Anthropic still dominate in a year?")),
            *QUESTIONS, ("tierlist", l_fullscreen), ("ende", l_ende)]
 
 

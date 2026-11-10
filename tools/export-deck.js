@@ -13,12 +13,21 @@ const path = require('path');
   fs.mkdirSync(dst, { recursive: true });
   for (const f of fs.readdirSync(dst)) if (f.endsWith('.png')) fs.unlinkSync(path.join(dst, f)); // no stale slides
   const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
-  const open = async (suffix) => {
+  // Each load compiles the shader in SwiftShader (CPU) and fetches Google Fonts: on a busy CI runner that can take
+  // longer than Playwright's default 30 s, so wait longer and try once more before giving up.
+  const open = async (suffix, tries = 2) => {
     const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
     page.on('console', (m) => m.type() === 'warning' || m.type() === 'error' ? console.warn(m.text()) : 0);
-    await page.goto(url + suffix);
-    await page.waitForFunction(() => document.documentElement.dataset.ready === '1', null, { timeout: 300000 });
-    await page.waitForTimeout(800); // slide fade-in
+    try {
+      await page.goto(url + suffix, { timeout: 120000 });
+      await page.waitForFunction(() => document.documentElement.dataset.ready === '1', null, { timeout: 300000 });
+    } catch (e) {
+      await page.close();
+      if (tries <= 1) throw e;
+      console.warn(`retrying ${suffix}: ${e.message.split('\n')[0]}`);
+      return open(suffix, tries - 1);
+    }
+    await page.waitForTimeout(1200); // slide fade-in (0.45 s delay + 0.55 s)
     return page;
   };
   // SwiftShader can lose the very first WebGL context while it compiles the shader: warm it up once.

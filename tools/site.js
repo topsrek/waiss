@@ -17,9 +17,14 @@ document.querySelectorAll('[data-mail]').forEach(a => {
   }
   const tba = document.querySelector('[data-tba]');
   if (tba) tba.hidden = cards.some(c => c.dataset.day > today);
-  // "Past" goes right after the last edition that is over (the page may be older than today)
-  const sep = document.querySelector('[data-sep]'), past = cards.filter(c => c.dataset.state === 'past');
-  if (sep) { sep.hidden = !past.length; if (past.length) past[past.length - 1].after(sep); }
+  // upcoming first (soonest on top), then "Past" and the past ones (most recent on top); the page may be older than today
+  const list = document.getElementById('eds'), sep = document.querySelector('[data-sep]');
+  if (list && sep) {
+    const by = (a, b) => a.dataset.day.localeCompare(b.dataset.day);
+    const past = cards.filter(c => c.dataset.state === 'past').sort(by).reverse();
+    list.append(...cards.filter(c => c.dataset.state !== 'past').sort(by), ...(tba ? [tba] : []), sep, ...past);
+    sep.hidden = !past.length;
+  }
   document.querySelectorAll('[data-until]').forEach(e => { e.hidden = e.dataset.until < today; });
 })();
 

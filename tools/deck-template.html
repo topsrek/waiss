@@ -31,6 +31,7 @@ h2{margin:0;font-family:'Tektur',sans-serif;font-weight:800;line-height:1.0;lett
 .qr .u{font-family:'IBM Plex Mono',monospace;font-size:21px;color:var(--ink);line-height:1.25}
 
 .tw{background:__TILE__;border-radius:36px;outline:2px solid var(--ink);outline-offset:10px;padding:40px 44px;display:flex;flex-direction:column;gap:26px}
+a.tw{color:inherit;text-decoration:none;cursor:pointer}
 .tw .head{display:flex;align-items:center;gap:20px}
 .tw .av{width:76px;height:76px;border-radius:50%;border:2px solid var(--ink);overflow:hidden;display:flex;align-items:center;justify-content:center;flex:none}
 .tw .av img{width:100%;height:100%;object-fit:cover;filter:grayscale(1)}
@@ -48,6 +49,9 @@ h2{margin:0;font-family:'Tektur',sans-serif;font-weight:800;line-height:1.0;lett
   transition:opacity .2s ease}
 .vid .play svg{width:72px;height:72px;margin-left:10px;fill:var(--ink)}
 .vid.on .play{opacity:0}
+/* playing: the video fills the slide (#stage is transformed, so fixed means "the 1920x1080 stage"); click again = back */
+.vid.big{position:fixed;left:0;top:0;width:1920px!important;height:1080px!important;border-radius:0;outline-color:transparent;z-index:50}
+.vid.big video{object-fit:contain}
 .tw .foot{font-family:'IBM Plex Mono',monospace;font-size:22px;color:var(--muted);display:flex;justify-content:space-between;border-top:1px solid var(--muted);padding-top:20px}
 
 @page{size:1920px 1080px;margin:0}
@@ -142,7 +146,7 @@ if(PRINT){
     const first=idx<0;idx=n;
     slides.forEach((s,i)=>{s.classList.toggle('on',i===n);
       if(i!==n)s.querySelectorAll('.vid').forEach(w=>{const v=w.querySelector('video');w.classList.remove('on');
-        if(v.src){v.pause();v.currentTime=0;}});});
+        if(v.src){v.pause();v.currentTime=0;}w.classList.remove('big');});});
     history.replaceState(null,'','#'+(n+1));
     if(!blob)return;
     const goal=target(cams[n]);
@@ -150,11 +154,19 @@ if(PRINT){
     if(first||instant||reduce){cancelAnimationFrame(raf);cur=goal;blob.draw(goal,goal.ph,0.05,quality());}
     else animate(cur,goal);
   }
-  // a video is fetched on its first click (muted, looped); later clicks pause / resume it
+  // a video is fetched on its first click (muted, looped); a click plays it filling the slide, the next one pauses it
+  // and puts it back. The jump between the two boxes is animated (FLIP: measure, switch, play the difference back).
   function toggle(w){
     const v=w.querySelector('video');
     if(!v.src){v.muted=true;v.src=v.dataset.src;}
-    if(v.paused){v.play().catch(()=>{});w.classList.add('on');}else{v.pause();w.classList.remove('on');}
+    const a=w.getBoundingClientRect(),play=v.paused;
+    if(play){v.play().catch(()=>{});}else{v.pause();}
+    w.classList.toggle('on',play);w.classList.toggle('big',play);
+    const b=w.getBoundingClientRect();
+    if(reduce||!b.width)return;
+    const k=b.width/w.offsetWidth; // screen px per stage px
+    w.animate([{transformOrigin:'0 0',transform:`translate(${(a.left-b.left)/k}px,${(a.top-b.top)/k}px) scale(${a.width/b.width},${a.height/b.height})`},
+               {transformOrigin:'0 0',transform:'none'}],{duration:450,easing:'cubic-bezier(.2,.8,.2,1)'});
   }
   addEventListener('keydown',e=>{
     if(e.metaKey||e.ctrlKey||e.altKey)return;

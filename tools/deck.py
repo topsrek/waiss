@@ -115,8 +115,9 @@ def subline(text, extra=""):
 
 
 def tweet_card(name, handle, text, meta="[10:42 · 3 Oct 2026]",
-               width=1000, size=44, avatar=None, media=None, media_h=0):
-    """Static tweet card. avatar / media: image path relative to the repo, or None for a placeholder."""
+               width=1000, size=44, avatar=None, media=None, media_h=0, url=None):
+    """Static tweet card. avatar / media: image path relative to the repo, or None for a placeholder.
+    url: the tweet; the whole card then links to it (a click opens it in a new tab instead of changing slides)."""
     img = lambda path: data_uri(path, "image/" + path.rsplit(".", 1)[-1].replace("jpg", "jpeg"))
     av = f'<img src="{img(avatar)}" alt="">' if avatar else '<span class="mono" style="font-size:20px">[@]</span>'
     x = data_uri("assets/logo/x.svg", "image/svg+xml", INK)
@@ -124,10 +125,11 @@ def tweet_card(name, handle, text, meta="[10:42 · 3 Oct 2026]",
     if media_h:
         inner = f'<img src="{img(media)}" alt="">' if media else '<span class="mono" style="font-size:22px">[Image / screenshot]</span>'
         med = f'<div class="media" style="height:{media_h}px">{inner}</div>'
-    return (f'<div class="tw" style="width:{width}px"><div class="head"><div class="av">{av}</div>'
+    tag = f'a href="{url}" target="_blank" rel="noopener"' if url else "div"
+    return (f'<{tag} class="tw" style="width:{width}px"><div class="head"><div class="av">{av}</div>'
             f'<div class="who"><b>{name}</b><span>{handle}</span></div><img class="x" src="{x}" alt="X"></div>'
             f'<div class="body" style="font-size:{size}px">{text}</div>{med}'
-            f'<div class="foot"><span>{meta}</span></div></div>')
+            f'<div class="foot"><span>{meta}</span></div></{tag.split()[0]}>')
 
 
 # The original shader shortens spikes that point at the camera, so the shape changed while the blob rotated.
@@ -449,8 +451,8 @@ MEDIA = []  # files the slides load on demand: copied to <deck>/media/ by main()
 def l_tweet_video(ed, cat="Community", model=None, head="", video=None, poster=None, ratio=2.0, **card_kw):
     """Model name + subline + a small tweet card on the left, the tweet's video large on the right.
     The video is a file next to the deck (media/, see MEDIA), not part of the HTML: it is fetched only when someone
-    clicks it, then plays muted and looped; a click pauses it again, leaving the slide rewinds it. Its poster (embedded)
-    stands in until then and in the PNG / PDF export."""
+    clicks it, then plays muted and looped, filling the whole slide; a click pauses it and puts it back, leaving the
+    slide rewinds it. Its poster (embedded) stands in until then and in the PNG / PDF export."""
     kw = dict(name="[Name]", handle="[@handle]", text="[Tweet text]", width=580, size=28)
     card = tweet_card(**{**kw, **card_kw})
     vw = 860
@@ -468,6 +470,65 @@ def l_tweet_video(ed, cat="Community", model=None, head="", video=None, poster=N
             f'{subline(head)}</div>'
             f'<div class="abs" style="left:130px;top:420px">{card}</div>'
             f'<div class="abs" style="left:{CONTENT_RIGHT - vw}px;top:380px">{vid}</div>')
+    return CONTENT_CAM, html
+
+
+LAB_LOGO = {"OpenAI": "openai", "Anthropic": "anthropic", "Moonshot": "kimi", "Mistral": "mistral",
+            "DeepSeek": "deepseek", "Z.ai": "zai"}  # assets/logo/labs/*.svg, lobehub icons (mono, currentColor)
+
+
+def lab_logo(lab, size):
+    raw = (ROOT / f"assets/logo/labs/{LAB_LOGO[lab]}.svg").read_text(encoding="utf-8").replace("currentColor", INK)
+    return (f'<img src="data:image/svg+xml;base64,{base64.b64encode(raw.encode()).decode()}" alt="{lab}" '
+            f'style="width:{size}px;height:{size}px;display:block">')
+
+
+def l_tweet_stack(ed, cat="Community", model=None, head="", series=(), bars=(), hi=None, ymax=4, note="", **card_kw):
+    """Model name + subline top left, the tweet top right, under both a stacked bar chart rebuilt from the tweet's image.
+    series: [(name, colour)], bottom to top. bars: [(label, lab, total, [part per series])]: the parts are read off the
+    original image and only set the proportions, the stack is scaled to `total` (the number the source prints).
+    Each bar gets its lab's logo under the axis (LAB_LOGO); bar `hi` is drawn in ink and bold."""
+    kw = dict(name="[Name]", handle="[@handle]", text="[Tweet text]", width=740, size=32)
+    card = tweet_card(**{**kw, **card_kw})
+    W, H, T, B = CONTENT_RIGHT - 120, 520, 52, 130  # svg size; T = room for the value labels, B = logos + names
+    slot = W / max(len(bars), 1)
+    bw = min(78, slot * .56)
+    Y = lambda v: T + (1 - v / ymax) * (H - T - B)
+    grid = "".join(f'<line x1="0" x2="{W}" y1="{Y(v):.1f}" y2="{Y(v):.1f}" stroke="#D9D5CC" stroke-width="1" '
+                   f'stroke-dasharray="4 6"/>' for v in range(1, int(ymax) + 1))
+    out, foot = "", ""
+    for k, (lab_txt, lab, total, parts) in enumerate(bars):
+        x, s, y = k * slot + (slot - bw) / 2, sum(parts), H - B
+        on = lab_txt == hi
+        for (_, col), p in zip(series, parts):
+            h = p / s * total / ymax * (H - T - B)
+            if h > .5:
+                out += f'<rect x="{x:.1f}" y="{y - h:.1f}" width="{bw:.1f}" height="{h:.1f}" fill="{col}"/>'
+            y -= h
+        out += f'<rect x="{x:.1f}" y="{y:.1f}" width="{bw:.1f}" height="{H - B - y:.1f}" fill="url(#stripes)"/>'
+        out += (f'<text x="{x + bw / 2:.1f}" y="{y - 14:.1f}" text-anchor="middle" class="{"v hi" if on else "v"}">'
+                f'{total:.2f}</text>')
+        foot += (f'<div style="position:absolute;left:{k * slot:.1f}px;width:{slot:.1f}px;top:{H - B + 18}px;display:flex;'
+                 f'flex-direction:column;align-items:center;gap:12px">{lab_logo(lab, 40)}'
+                 f'<span class="mono" style="font-size:{19 if on else 17}px;line-height:1.2;text-align:center;'
+                 f'font-weight:{700 if on else 400};color:{INK if on else MUTED}">{lab_txt}</span></div>')
+    # stripes like the original: thin background lines across every bar
+    stripes = (f'<pattern id="stripes" width="8" height="9" patternUnits="userSpaceOnUse">'
+               f'<rect y="7" width="8" height="2" fill="#F5F3EE"/></pattern>')
+    svg = (f'<svg viewBox="0 0 {W} {H}" width="{W}" height="{H}" style="overflow:visible;display:block">'
+           f'<defs>{stripes}</defs>'
+           f'<style>.v{{font:600 24px "IBM Plex Mono",monospace;fill:{MUTED}}}.v.hi{{font-weight:700;font-size:32px;fill:{INK}}}</style>'
+           f'{grid}{out}'
+           f'<line x1="0" x2="{W}" y1="{H - B}" y2="{H - B}" stroke="{INK}" stroke-width="2"/></svg>')
+    legend = "".join(f'<span style="display:flex;align-items:center;gap:14px"><span style="width:34px;height:34px;'
+                     f'border-radius:4px;background:{col}"></span>{name}</span>' for name, col in series)
+    html = (f'<div class="abs" style="left:120px;top:{HEAD_TOP}px;width:860px">{eyebrow(cat)}{model_h(model) if model else ""}'
+            f'{subline(head)}</div>'
+            f'<div class="abs" style="right:{CORNER}px;top:{CORNER + 20}px">{card}</div>'
+            f'<div class="abs" style="left:120px;top:420px;display:flex;gap:44px;font-size:32px;font-weight:600">{legend}</div>'
+            f'<div class="abs" style="left:120px;top:470px;width:{W}px;height:{H}px">{svg}{foot}</div>'
+            f'<div class="abs mono" style="left:120px;bottom:44px;width:1380px;font-size:19px;line-height:1.3;'
+            f'letter-spacing:.04em">{note}</div>')
     return CONTENT_CAM, html
 
 
@@ -1032,8 +1093,28 @@ FABLE = [
         l_tweet_video, cat="Community", model="Fable 5.2", head="4.7&#215; less compute than Opus 5.5",
         name="Dominik Scholz", handle="@dom_scholz", avatar="assets/recap/dom-scholz-avatar.jpg",
         text="Opus 5.5 vs. Fable 5.2<br>waaaay quicker, almost 0-shot from fable<br>Fabulous",
-        meta="00:20 · 10 Nov 2026",
+        meta="00:20 · 10 Nov 2026", url="https://x.com/dom_scholz/status/2119933150025363661",
         video="assets/recap/dom-scholz-fable-vs-opus.mp4", poster="assets/recap/dom-scholz-fable-vs-opus.jpg")),
+    ("fable-yap", partial(
+        l_tweet_stack, cat="Community", model="Fable 5.2", head="Half the yap of Opus 5.5",
+        name="Florian Dedov", handle="@NeuralNine", avatar="assets/recap/neuralnine-avatar.jpg",
+        text="Fable 5.2 is the best model out there and it doesn&#8217;t yap!", meta="00:33 · 10 Nov 2026",
+        url="https://x.com/NeuralNine/status/2119936479166181582",
+        series=(("phrases", "#F7931E"), ("typography", "#DDBB8E"), ("formatting", "#8C8780"), ("length", "#A3410F")),
+        # read off the tweet's image (pixel heights per colour), totals as printed there; older models dropped
+        bars=(("GPT-6<br>Sol", "OpenAI", 0.67, (0.03, 0.41, 0.23, 0)),
+              ("GPT-6<br>Luna", "OpenAI", 1.07, (0.02, 0.79, 0.18, 0.08)),
+              ("Fable<br>5.2", "Anthropic", 1.18, (0.03, 0.15, 0.49, 0.52)),
+              ("GPT-6.1<br>Sol", "OpenAI", 1.48, (0.02, 0.88, 0.37, 0.21)),
+              ("Sonnet<br>5.5", "Anthropic", 1.91, (0.06, 0.08, 0.89, 0.87)),
+              ("Kimi<br>K3.1 Pro", "Moonshot", 1.93, (0.03, 1.02, 0.56, 0.32)),
+              ("Mistral<br>Large 4", "Mistral", 1.95, (0.34, 1.30, 0.19, 0.12)),
+              ("Opus<br>5.5", "Anthropic", 2.34, (0.06, 0.24, 0.88, 1.15)),
+              ("DeepSeek<br>V4.1 Flash", "DeepSeek", 2.40, (0.05, 0.92, 0.65, 0.78)),
+              ("GLM-5.3", "Z.ai", 3.11, (0.14, 2.04, 0.24, 0.68)),
+              ("GLM-5.3<br>Flash", "Z.ai", 3.18, (0.22, 1.99, 0.32, 0.65))),
+        hi="Fable<br>5.2", ymax=3.4,
+        note="neuralyap v0.1: yap hits per response, lower is better; medium effort where a model has one.")),
     ("fable-zitat", partial(
         l_statement, text="&#8220;For most coding and knowledge tasks, we recommend that users start with Claude Opus 5.5, "
                           "our strongest daily driver [&#8230;]&#8221;",

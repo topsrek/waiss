@@ -9,6 +9,9 @@ __FONTS__
 :root{--ink:__INK__;--muted:__MUTED__;--grad:__GRAD__}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;background:#EDEAE2;color:var(--ink);font-family:'Archivo',sans-serif}
+/* phones: the stage is 1920 px wide until the script scales it; if the HTML streams in slowly the browser lays that out
+   first and keeps the widened viewport (pannable, swipes pan instead of paging). A fixed body clips it from the start. */
+body{position:fixed;inset:0}
 #stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;margin:-540px 0 0 -960px;
   transform:scale(var(--k,1));transform-origin:50% 50%;background:var(--grad);overflow:hidden;cursor:default}
 #blob{position:absolute;left:0;top:0;width:1920px;height:1080px;display:block}
@@ -62,6 +65,7 @@ a.tw{color:inherit;text-decoration:none;cursor:pointer}
 
 @page{size:1920px 1080px;margin:0}
 html.print,html.print body{height:auto;overflow:visible;background:none}
+html.print body{position:static}
 html.print #stage{position:static;margin:0;transform:none;width:auto;height:auto;background:none;overflow:visible}
 html.print #blob,html.print .vid .play{display:none}
 html.print .slide{position:relative;opacity:1;visibility:visible;transition:none;overflow:hidden;background:var(--grad);

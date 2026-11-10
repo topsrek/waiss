@@ -1024,13 +1024,14 @@ def st_shots(ed, cat="[Category]", th=TH_DEFAULT, shots=(("", "[Caption]"),), to
     dark = tone == "ink"
     cells = "".join(f'<figure style="margin:0;display:flex;flex-direction:column;gap:22px;min-width:0;height:100%">'
                     f'<div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center">'
-                    + (st_img(src, extra=f"border-radius:14px;box-shadow:0 20px 70px {rgba(th['b'], .45)}") if src
+                    + (st_img(src, "auto", "auto", extra=f"max-width:100%;max-height:100%;border-radius:14px;"
+                                                      f"box-shadow:0 20px 70px {rgba(th['b'], .45)}") if src
                        else st_ph("[Screenshot]", dark=dark))
                     + f'</div><figcaption style="text-align:center">{chip(cap, th["a"], size=22)}'
                       f'</figcaption></figure>' for k, (src, cap) in enumerate(shots))
     body = (f'<div style="display:grid;grid-template-columns:repeat({len(shots)},minmax(0,1fr));grid-template-rows:minmax(0,1fr);gap:48px;'
             f'width:100%;height:100%">{cells}</div>')
-    return st_frame(cat, body, th, tone=tone, pad=56)
+    return st_frame(cat, body, th, tone=tone, pad=40)
 
 
 def st_demo(ed, cat="[Category]", th=TH_DEFAULT, text="Live demo"):
@@ -1616,8 +1617,9 @@ T3_SLIDES = [
                         "- lust-lang, an alternative toolchain for a subset of rust that compiles 100x faster<br>[&#8230;]<br>"
                         "- <b>t3os</b> (private for now), the start of my &#8220;perfect os for agents&#8221;. "
                         "Got 5 boxes running it already &#128520;<br>[&#8230;]<br>Pretty slow month."))),
-    ("t3-shots", partial(st_shots, cat=HARNESS, th=TH_T3,
-                         shots=(("", "Usage &#8594; Limits"), ("", "Environments"), ("", "Source control")))),
+    ("t3-shots", partial(st_shots, cat=HARNESS_T3, th=TH_T3,
+                         shots=((f"{SHOW}/t3code/t3code-window.png",
+                                 "These slides, made in T3 Code: every project in one sidebar, git on the right"),))),
     ("t3-demo", partial(st_demo, cat=HARNESS, th=TH_T3)),
 ]
 

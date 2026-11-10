@@ -125,7 +125,7 @@ if(PRINT){
 
   function animate(from,goal){
     cancelAnimationFrame(raf);
-    const t0=performance.now(),dur=1100,lerp=(a,b,e)=>a+(b-a)*e;
+    const t0=performance.now(),dur=650,lerp=(a,b,e)=>a+(b-a)*e;
     const step=now=>{
       const k=Math.min(1,(now-t0)/dur),e=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
       const s={b:from.b.map((v,i)=>lerp(v,goal.b[i],e)),ph:lerp(from.ph,goal.ph,e),rot:lerp(from.rot,goal.rot,e),

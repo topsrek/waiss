@@ -131,7 +131,10 @@ if(PRINT){
   let scale=1,idx=-1,cur=null,raf=0;
   const quality=()=>{const dpr=Math.min(devicePixelRatio||1,1.5),cap=Math.sqrt(2.4e6/(W*H));
     return Math.max(.5,Math.min(dpr*scale,cap,1.5));};
-  const fit=()=>{scale=Math.min(innerWidth/W,innerHeight/H);stage.style.setProperty('--k',scale);
+  // the viewport size from clientWidth/Height, not innerWidth/Height: on a phone the unscaled 1920 px stage widens
+  // the layout viewport, innerWidth reports that (1155 instead of 390) and the deck stays zoomed in for good
+  const vw=()=>document.documentElement.clientWidth||innerWidth,vh=()=>document.documentElement.clientHeight||innerHeight;
+  const fit=()=>{scale=Math.min(vw()/W,vh()/H);stage.style.setProperty('--k',scale);
     if(cur&&blob)blob.draw(cur,cur.ph,0.05,quality());};
   addEventListener('resize',fit);
 
@@ -186,8 +189,16 @@ if(PRINT){
   // after any click the keys belong to the deck again: nothing (link, video) keeps the focus
   addEventListener('click',e=>{
     const w=e.target.closest('.vid');
-    if(w)toggle(w);else if(!e.target.closest('a'))go(e.clientX<innerWidth/3?idx-1:idx+1);
+    if(w)toggle(w);else if(!e.target.closest('a'))go(e.clientX<vw()/3?idx-1:idx+1);
     setTimeout(()=>{if(document.activeElement&&document.activeElement!==document.body)document.activeElement.blur();});
+  });
+  // phones: swipe left = next, swipe right = back (a tap is a click, see above)
+  let tx=null,ty=0;
+  addEventListener('touchstart',e=>{tx=e.touches.length===1?e.touches[0].clientX:null;ty=tx===null?0:e.touches[0].clientY;},{passive:true});
+  addEventListener('touchend',e=>{
+    if(tx===null)return;
+    const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;tx=null;
+    if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)*1.5){go(dx<0?idx+1:idx-1);e.preventDefault();} // no click after a swipe
   });
   addEventListener('mousedown',e=>{if(e.target.closest('.vid'))e.preventDefault();}); // no focus, no text selection
   addEventListener('hashchange',()=>go((parseInt(location.hash.slice(1))||1)-1));

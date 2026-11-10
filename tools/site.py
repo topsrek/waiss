@@ -205,6 +205,11 @@ def editions(eds, today):
 </section>'''
 
 
+def pdf_name(ed):
+    """The PDF's file name, as it lands in a downloads folder: WAISS-1-Slides-2026-11-10.pdf (sorts by date)."""
+    return f'WAISS-{ed["slug"]}-Slides-{ed["start"]:%Y-%m-%d}.pdf'
+
+
 def talk_src(t):
     return t.get("html") or t.get("file") or t.get("pdf")  # "pdf" = older name of "file"
 
@@ -243,7 +248,7 @@ def slides_panel(ed, pre="", head=True):
                       f'<span class="c">{count} {"slide" if count == 1 else "slides"}</span>{start}</div>'
                       f'<ul class="thumbs">{thumbs}</ul></div>')
     actions = (ext(f"{s}/", "Present", "btn") if ed["slides"] else "") + (
-        f'<a class="btn ghost" href="{s}/waiss-{s}-slides.pdf" download>PDF</a>' if ed.get("pdf") else "")
+        f'<a class="btn ghost" href="{s}/{pdf_name(ed)}" download>PDF</a>' if ed.get("pdf") else "")
     return (f'<div class="panel" id="slides-{ed["slug"]}"><div class="panel-head">'
             + (f'<div><div class="eyebrow">WAISS {esc(ed["edition"])}</div><div class="panel-date">{when(ed)}</div></div>' if head else "")
             + f'<div class="btns">{actions}</div></div>{"".join(blocks)}</div>')
@@ -485,7 +490,7 @@ def slides_text(ed, raw):
     s = ed["start"]
     out = [f"# WAISS {ed['edition']} – slides", "",
            f"Wiener AI Software Stammtisch · {s:%a} {s.day} {s:%b %Y}, {s:%H:%M} · {ed['ort_lang']}, {ed['adresse']}", "",
-           f"Present: {SITE}/{ed['slug']}/" + (f" · PDF: {SITE}/{ed['slug']}/waiss-{ed['slug']}-slides.pdf" if ed.get("pdf") else ""),
+           f"Present: {SITE}/{ed['slug']}/" + (f" · PDF: {SITE}/{ed['slug']}/{pdf_name(ed)}" if ed.get("pdf") else ""),
            f"Source: {REPO}", ""]
     part = None
     for k, (name, body) in enumerate(secs, 1):
@@ -616,7 +621,7 @@ def page(title, desc, body, eds, prefix="", canonical=SITE + "/", robots=None, l
 <style>{css}</style>
 </head>
 <body>
-<canvas id="blob" aria-hidden="true"></canvas>
+<div class="blobwrap" aria-hidden="true"><canvas id="blob"></canvas></div>
 <header class="top"><div class="wrap">
   <div class="brand"><a class="home" href="{prefix or "#top"}" aria-label="WAISS">{wordmark("WAISS", "wm small")}</a>
     <a class="by" href="{TELOS["links"]}" target="_blank" rel="noopener" aria-label="Telos Circle">{svg_file("telos-circle-by", "tcby")}</a></div>
@@ -709,7 +714,7 @@ def main():
             pdf = png / "waiss-slides.pdf"
             ed["pdf"] = pdf.exists()
             if ed["pdf"]:
-                shutil.copy(pdf, d / f'waiss-{ed["slug"]}-slides.pdf')
+                shutil.copy(pdf, d / pdf_name(ed))
             (d / "slides.md").write_text(slides_text(ed, deck_html), encoding="utf-8")
         for t in ed.get("talks") or []:
             src = talk_src(t)

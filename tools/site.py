@@ -9,12 +9,13 @@ Inputs
                     deck   folder name of a built deck: build/<deck>/index.html + meta.json and exports/<deck>/*.png
                     parts  [{"title", "from"}]: a part starts at the slide named `from` (name without the NN- prefix)
                            and runs until the next part
-                    talks  [{"title", "speaker", "url" | "pdf"}]: slides people bring themselves (PDF in the repo or a link)
+                    talks  [{"title", "speaker", "html" | "file" | "url"}]: slides people bring themselves (an HTML folder,
+                           a PDF/PPT in the repo, or a link)
                     shown in the part whose title contains "Show"
 Upcoming vs. past is decided in the browser (Vienna time): an edition counts as past from the day after it.
 The build does the same for visitors without JavaScript, and CI rebuilds every night.
 """
-import html, json, re, shutil, sys, unicodedata
+import html, json, os, re, shutil, sys, unicodedata
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -81,15 +82,16 @@ def load_slides(ed):
 
 
 # ------------------------------------------------------------------------------------- pieces
-def wordmark(text, cls="wm", label=None):
-    """Secession lettering as ONE scalable SVG (render.txt draws fixed-size pixels)."""
+def wordmark(text, cls="wm", label=None, hi=()):
+    """Secession lettering as ONE scalable SVG (render.txt draws fixed-size pixels). Letters at the indices in `hi`
+    get class="hi" (drawn in ink while the rest takes the colour of the text)."""
     raw = text.upper().replace("Ä", "AE").replace("Ö", "OE").replace("Ü", "UE").replace("ß", "SS")
     raw = "".join(c for c in unicodedata.normalize("NFD", raw) if unicodedata.category(c) != "Mn")
     x, parts = 0.0, []
     for ch in raw:
         vx, w, d = R.G.get(ch, R.G[" "])
         if d:
-            parts.append(f'<path transform="translate({x - vx:.2f} 0)" d="{d}"/>')
+            parts.append(f'<path{" class='hi'" if len(parts) in hi else ""} transform="translate({x - vx:.2f} 0)" d="{d}"/>')
         x += w + 20
     width = x - 20
     return (f'<svg class="{cls}" viewBox="-8 -8 {width + 16:.1f} 116" role="img" aria-label="{esc(label or text)}">'
@@ -133,30 +135,14 @@ def ics(ed):
 
 
 # ------------------------------------------------------------------------------------- sections
-def hero(eds, today):
-    cards = []
-    for ed in eds:
-        live = ed["day"] >= today
-        is_next = live and ed is next(e for e in eds if e["day"] >= today)
-        cards.append(
-            f'<div class="next" data-next="{ed["day"]}"{"" if is_next else " hidden"}>'
-            f'<div class="eyebrow"><span data-when>{"Tonight" if ed["day"] == today else "Next"}</span> · WAISS {esc(ed["edition"])}</div>'
-            f'<div class="next-date">{when(ed, year=False)}</div>'
-            f'<div class="next-place">{place(ed)}</div>'
-            f'<div class="btns">' + (ext(ed["luma"], "Register on Luma", "btn") if ed["luma"] else "")
-            + f'<a class="btn ghost" href="{ed["slug"]}/waiss-{ed["slug"]}.ics" download>Add to calendar</a></div></div>')
-    none_next = not any(e["day"] >= today for e in eds)
-    cards.append(f'<div class="next" data-next="tba"{"" if none_next else " hidden"}>'
-                 '<div class="eyebrow">Next edition</div><div class="next-date">Date coming soon</div>'
-                 '<div class="next-place">We meet about once a month in Vienna. The Discord hears first.</div>'
-                 f'<div class="btns">{ext(eds[-1]["links"]["discord"], "Join the Discord", "btn")}</div></div>')
+def hero():
     return f'''
 <section class="hero" id="top" data-cam="0.82,0.7,-0.04,0" data-cam-m="0.38,0.14,0.3,0">
   <div class="wrap">
     <h1>{wordmark("WAISS", "wm big")}</h1>
-    <p class="acro"><b>W</b>iener <b>AI</b> <b>S</b>oftware <b>S</b>tammtisch</p>
+    <p class="acro">{wordmark("Wiener AI", "l1", "Wiener AI Software Stammtisch", hi=(0, 6, 7))}
+      {wordmark("Software Stammtisch", "l2", "", hi=(0, 8))}</p>
     <p class="lead">A cozy get-together (Stammtisch) for Viennese AI builders.</p>
-    {"".join(cards)}
   </div>
 </section>'''
 
@@ -170,7 +156,7 @@ def format_(eds, today):
     nxt = next((e for e in eds if e["day"] >= today and e["luma"]), None)
     cta = (f'<div class="btns" data-until="{nxt["day"]}">{ext(nxt["luma"], "Register on Luma", "btn")}</div>' if nxt else "")
     return f'''
-<section id="format" data-cam="0.6,-0.95,0.15,80" data-cam-m="0.3,-0.2,0.42,80">
+<section id="format" data-cam="0.6,0.92,0.12,80" data-cam-m="0.3,0.2,0.4,80">
   <div class="wrap">
     <div class="eyebrow">Every edition</div>
     <ul class="agenda">{r}</ul>
@@ -179,36 +165,56 @@ def format_(eds, today):
 </section>'''
 
 
-def ed_row(ed, today):
-    past = ed["day"] < today
+def state(day, today):
+    return "past" if day < today else "today" if day == today else "upcoming"
+
+
+def ed_card(ed, today):
+    st = state(ed["day"], today)
+    s = ed["start"]
     links = []
     if ed["luma"]:
-        links.append(ext(ed["luma"], f'<span data-upcoming{" hidden" if past else ""}>Register</span>'
-                                     f'<span data-past{"" if past else " hidden"}>Luma</span>', "lnk"))
+        links.append(ext(ed["luma"], f'<span data-upcoming{" hidden" if st == "past" else ""}>Register</span>'
+                                     f'<span data-past{"" if st == "past" else " hidden"}>Luma</span>', "lnk"))
+    links.append(f'<a class="lnk" href="{ed["slug"]}/waiss-{ed["slug"]}.ics" download data-upcoming'
+                 f'{" hidden" if st == "past" else ""}>Calendar</a>')
     if ed["slides"] or ed.get("talks"):
         links.append(f'<a class="lnk" href="#slides-{ed["slug"]}">Slides&nbsp;&#8595;</a>')
-    badge = f'<span class="badge" data-today{"" if ed["day"] == today else " hidden"}>Today</span>'
-    return (f'<li class="ed-row" data-day="{ed["day"]}"><span class="n">{esc(ed["edition"])}</span>'
-            f'<span class="d">{when(ed)} {badge}</span><span class="p">{place(ed)}</span>'
-            f'<span class="l">{"".join(links)}</span></li>')
+    return (f'<li class="ed" data-day="{ed["day"]}" data-state="{st}">'
+            f'<div class="ed-top">{wordmark(ed["edition"], "num", "WAISS " + ed["edition"])}'
+            f'<span class="st" data-st>{st.capitalize()}</span></div>'
+            f'<div class="ed-date">{s:%a} {s.day} {s:%b %Y}</div>'
+            f'<div class="ed-place">{s:%H:%M} · {esc(ed["ort_lang"])}<br>{esc(ed["adresse"])}</div>'
+            f'<div class="ed-links">{"".join(links)}</div></li>')
 
 
 def editions(eds, today):
-    up = [e for e in eds if e["day"] >= today]
-    past = [e for e in eds if e["day"] < today][::-1]
+    nxt = int(re.sub(r"\D", "", eds[-1]["edition"])) + 1
+    tba = (f'<li class="ed tba" data-tba{"" if all(e["day"] <= today for e in eds) else " hidden"}>'
+           f'<div class="ed-top">{wordmark(f"#{nxt}", "num", f"WAISS #{nxt}")}<span class="st">Next</span></div>'
+           f'<div class="ed-date">Date coming soon</div><div class="ed-place">About once a month in Vienna.</div>'
+           f'<div class="ed-links">{ext(eds[-1]["links"]["discord"], "Discord", "lnk")}</div></li>')
     return f'''
 <section id="editions" data-cam="0.5,0.95,-0.32,140" data-cam-m="0.3,0.2,-0.4,140">
   <div class="wrap">
-    <div class="eyebrow">Editions</div>
-    <h2>Upcoming</h2>
-    <ul class="rows" id="up">{"".join(ed_row(e, today) for e in up)}</ul>
-    <p class="empty" id="up-empty"{" hidden" if up else ""}>The next date is coming soon.
-      {ext(eds[-1]["links"]["discord"], "Discord", "lnk")}</p>
-    <h2 class="h-past">Past</h2>
-    <ul class="rows" id="past">{"".join(ed_row(e, today) for e in past)}</ul>
-    <p class="empty" id="past-empty"{" hidden" if past else ""}>Nothing yet. Come to the first one.</p>
+    <h2>Editions</h2>
+    <ol class="eds" id="eds">{"".join(ed_card(e, today) for e in eds)}{tba}</ol>
   </div>
 </section>'''
+
+
+def talk_src(t):
+    return t.get("html") or t.get("file") or t.get("pdf")  # "pdf" = older name of "file"
+
+
+def talk_href(slug, t):
+    if t.get("url"):
+        return t["url"]
+    return f'{slug}/talks/{Path(talk_src(t)).name}' + ("/" if t.get("html") else "")
+
+
+def talk_kind(t):
+    return "Slides" if t.get("html") else Path(talk_src(t)).suffix[1:].upper() if talk_src(t) else "Link"
 
 
 def slides_panel(ed, first):
@@ -225,10 +231,10 @@ def slides_panel(ed, first):
             f'<span class="sn">{i:02d}</span></a></li>' for i, n in sl)
         if "show" in title.lower():
             for t in talks:
-                href = t.get("url") or f'{s}/talks/{Path(t["pdf"]).name}'
+                href = talk_href(s, t)
                 thumbs += (f'<li class="talk"><a href="{esc(href)}" target="_blank" rel="noopener">'
                            f'<span class="eyebrow">Talk</span><strong>{esc(t["title"])}</strong>'
-                           f'<span>{esc(t.get("speaker", ""))}</span><span class="sn">{"PDF" if t.get("pdf") else "Link"}&#8599;</span></a></li>')
+                           f'<span>{esc(t.get("speaker", ""))}</span><span class="sn">{talk_kind(t)}&#8599;</span></a></li>')
         count = len(sl) + (len(talks) if "show" in title.lower() else 0)
         start = f'<a class="lnk" href="{s}/#{sl[0][0]}" target="_blank" rel="noopener">Present from here{ARROW}</a>' if sl else ""
         blocks.append(f'<div class="part"><div class="part-head"><span class="n">{k:02d}</span><h3>{esc(title)}</h3>'
@@ -258,31 +264,24 @@ def slides(eds):
 </section>'''
 
 
+MAIL = ("events", "teloscircle.com")  # put together in the browser, against scrapers
+
+
 def contribute(eds):
-    L = eds[-1]["links"]
+    env = ('<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" '
+           'aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M3 6.5l9 6.5 9-6.5"/></svg>')
+    master = (f'<a class="btn ghost" href="master/" target="_blank" rel="noopener">All slide layouts{ARROW}</a>'
+              if (ROOT / "build" / "master" / "index.html").exists() else "")
     return f'''
-<section id="contribute" data-cam="0.75,-0.98,-0.1,60" data-cam-m="0.3,-0.2,-0.42,60">
+<section id="contribute" data-cam="0.62,0.9,-0.08,60" data-cam-m="0.3,0.2,-0.42,60">
   <div class="wrap">
-    <div class="eyebrow">Open source</div>
-    <h2>Bring your slides</h2>
-    <div class="gh">
-      <div>
-        <p class="sub">Slides, blob and this page are open source. Giving a talk? Add your slides by pull request.</p>
-        <ol class="steps">
-          <li><span class="n">01</span><span>Fork <code>topsrek/waiss</code>.</span></li>
-          <li><span class="n">02</span><span>Add a layout in <code>tools/deck.py</code>, or a PDF under <code>talks</code>.</span></li>
-          <li><span class="n">03</span><span>Open a pull request. Merged means deployed.</span></li>
-        </ol>
-        <div class="btns">{ext(REPO, svg_file("github", "ico", "currentColor") + "topsrek/waiss", "btn")}
-          {ext(L["discord"], "Talk to us on Discord", "btn ghost")}</div>
-      </div>
-      <pre class="code" aria-label="Example"><span class="cm"># editions/002.json</span>
-"talks": [{{
-  "title": "Agents that file my taxes",
-  "speaker": "Your Name · @handle",
-  "pdf": "talks/002/agents-taxes.pdf"
-}}]</pre>
-    </div>
+    <h2>Want to present something next time?</h2>
+    <ul class="ways">
+      <li>{svg_file("github", "ico", "currentColor")}<span>Open a pull request on {ext(REPO, "github.com/topsrek/waiss", "lnk")}</span></li>
+      <li>{env}<span>or email <a class="lnk" data-mail="{MAIL[0]}|{MAIL[1]}" href="#contribute">{MAIL[0]} [at] {MAIL[1]}</a></span></li>
+    </ul>
+    <p class="formats">HTML preferred · PPT and PDF work too</p>
+    <div class="btns">{master}</div>
   </div>
 </section>'''
 
@@ -293,7 +292,7 @@ def footer(eds, prefix=""):
                                 + "".join(f"<li>{i}</li>" for i in items) + "</ul></div>")
     year = datetime.now(VIENNA).year
     return f'''
-<footer data-cam="0.7,0.0,-0.62,300" data-cam-m="0.34,0.0,-0.5,300">
+<footer data-cam="0.5,0.95,-0.38,300" data-cam-m="0.3,0.2,-0.45,300">
   <div class="wrap">
     <div class="fgrid">
       <div class="fbrand">
@@ -409,13 +408,19 @@ def main():
             deck_html = (ROOT / "build" / ed["deck"] / "index.html").read_text(encoding="utf-8")
             assert D.FONTS in deck_html, "deck does not use tools/deck.py's FONTS"
             (d / "index.html").write_text(deck_html.replace(D.FONTS, FONT_LINK.format(p="../")), encoding="utf-8")
+            if (ROOT / "build" / ed["deck"] / "media").exists():  # videos the deck fetches on click
+                shutil.copytree(ROOT / "build" / ed["deck"] / "media", d / "media")
             png = ROOT / "exports" / ed["deck"]
             (d / "slides").mkdir()
             for _, sl in ed["slides"]:
                 for _, n in sl:
                     src = png / f"{n}.png"
                     if not src.exists():
-                        sys.exit(f"{src} missing: run `npm run deck` again (the PNGs are older than the deck)")
+                        msg = f"{src} missing: run `npm run deck` again (the PNGs are older than the deck)"
+                        if os.environ.get("CI"):
+                            sys.exit(msg)
+                        print("warning:", msg)  # local build while the deck is being edited
+                        continue
                     with Image.open(src) as im:
                         im.convert("RGB").resize((960, 540), Image.LANCZOS).save(d / "slides" / f"{n}.webp", quality=82, method=6)
             pdf = png / "waiss-slides.pdf"
@@ -423,12 +428,19 @@ def main():
             if ed["pdf"]:
                 shutil.copy(pdf, d / f'waiss-{ed["slug"]}-slides.pdf')
         for t in ed.get("talks") or []:
-            if t.get("pdf"):
+            src = talk_src(t)
+            if src and not t.get("url"):
                 (d / "talks").mkdir(exist_ok=True)
-                shutil.copy(ROOT / t["pdf"], d / "talks" / Path(t["pdf"]).name)
+                (shutil.copytree if t.get("html") else shutil.copy)(ROOT / src, d / "talks" / Path(src).name)
+
+    master = ROOT / "build" / "master" / "index.html"
+    if master.exists():
+        (OUT / "master").mkdir()
+        (OUT / "master" / "index.html").write_text(
+            master.read_text(encoding="utf-8").replace(D.FONTS, FONT_LINK.format(p="../")), encoding="utf-8")
 
     desc = "WAISS – Wiener AI Software Stammtisch: a monthly get-together in Vienna for everyone who builds with AI. By Telos Circle."
-    body = hero(eds, today) + format_(eds, today) + editions(eds, today) + slides(eds) + contribute(eds)
+    body = hero() + format_(eds, today) + editions(eds, today) + slides(eds) + contribute(eds)
     (OUT / "index.html").write_text(page("WAISS – Wiener AI Software Stammtisch", desc, body, eds), encoding="utf-8")
     (OUT / "privacy").mkdir()
     (OUT / "privacy" / "index.html").write_text(

@@ -23,15 +23,11 @@
     },
     {
       "title": "AI Recap",
-      "from": "muse-tweet"
-    },
-    {
-      "title": "Show & Tell",
-      "from": "talk"
+      "from": "releases"
     },
     {
       "title": "Open round",
-      "from": "frage"
+      "from": "diskussion-tempo"
     }
   ],
   "talks": []

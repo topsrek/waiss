@@ -68,7 +68,7 @@ npm run build          # deck + slide PNGs + site -> dist/
 | `anmeldung` | Luma link ("Register" while upcoming, "Luma" afterwards) |
 | `deck` | Folder name of the built deck: `build/<deck>/` and `exports/<deck>/` |
 | `parts` | `[{"title", "from"}]`: a part starts at the slide named `from` (without the `NN-` prefix) |
-| `talks` | `[{"title", "speaker", "url" or "pdf"}]`: slides people bring themselves, shown under Show & Tell |
+| `talks` | `[{"title", "speaker", "html" or "file" or "url"}]`: slides people bring themselves, shown under Show & Tell |
 
 An edition is "upcoming" up to and including its day and "past" from the next day (Vienna time). The page
 decides this live in the browser, and the nightly build does the same for visitors without JavaScript.
@@ -78,12 +78,20 @@ nginx) to the `site` branch, which Coolify on the Telos Hetzner server serves an
 
 ## Contributing slides
 
-Giving a talk? Open a pull request:
+Want to present something next time? Open a pull request, or email events@teloscircle.com.
+**HTML preferred**, PPT and PDF work too.
 
-- **In the WAISS look:** add your slides as layouts in `tools/deck.py` (see the `l_*` functions) and run `npm run deck`.
-- **Your own format:** put a PDF under `talks/<NNN>/` (or use a link) and add it to `talks` in `editions/<NNN>.json`.
+- **In the WAISS look:** build your slides with the layouts in `tools/deck.py`. `npm run deck` also builds the
+  master deck (every layout once, `build/master/`, online at waiss.teloscircle.com/master/).
+- **Your own HTML deck:** put it in a folder `talks/<NNN>/<name>/` with an `index.html`.
+- Then list it in `editions/<NNN>.json`:
 
-The pull request build shows whether everything renders. Once it is merged, the slides go live.
+```json
+"talks": [{"title": "Agents that file my taxes", "speaker": "Your Name", "html": "talks/002/agents-taxes"}]
+```
+
+Instead of `html`, use `file` (a PDF or PPT in the repo) or `url` (a link). The pull request build shows whether
+everything renders; once it is merged, the slides are live.
 
 ## Roadmap
 

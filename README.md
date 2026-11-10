@@ -48,7 +48,10 @@ inline SVG, the blob becomes a `<canvas>` with the WebGL shader from `Blob.dc.ht
 same blob rotates and travels between slides. Arrow keys / space / click to navigate, `F` fullscreen,
 `#N` jumps to slide N. `node tools/export-deck.js` writes PNGs and the PDF fallback to `exports/deck/`
 (`npm run deck` does both). Needs `pip install qrcode` for the QR codes. Layouts are the functions in
-`tools/deck.py`; links and the optional `wifi` (`{"ssid", "password"}`) come from `editions/*.json`.
+`tools/deck.py`; links and `wifi` come from `editions/*.json`. `wifi` is off by default (`false` or missing: no WLAN tile on the
+orga slide); `{"ssid", "password"}` shows a join-the-network QR code, `true` a placeholder tile. The same
+run builds `build/master/`: every layout once with [placeholders] and no data from a real edition
+(`node tools/export-deck.js build/master exports/master`).
 
 ## Website
 

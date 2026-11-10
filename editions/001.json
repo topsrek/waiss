@@ -14,7 +14,7 @@
     "github": "https://github.com/topsrek/waiss",
     "linkedin": "https://linkedin.com/in/pwimberger"
   },
-  "wifi": null,
+  "wifi": false,
   "deck": "deck",
   "parts": [
     {

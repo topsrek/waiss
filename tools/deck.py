@@ -847,22 +847,39 @@ def l_ranges(ed, cat="", model=None, head="", ymin=0.8, ymax=2.2, yticks=(), fmt
 
 
 # ------------------------------------------------------------------ show & tell: a looser frame for people's own content
-# A show & tell slide is a header (the talk's category, big, top left; speaker top right of it) over one rounded
-# "stage" that holds whatever the speaker brings: a logo, screenshots, code, a tweet, a demo. The stage is light
-# (TILE_BG) or ink; the blob sits small on its top-right corner, half hidden behind it, and stays there for the whole
-# talk. st_frame() is the frame alone (body = any HTML, laid out in a 1760 x 770 box); the st_* layouts below are
-# common fillings of it.
+# A show & tell slide is a header (SHOW & TELL + speaker, then the talk's category big, top left; WAISS #N, date and
+# slide number top right) over one rounded "stage" that holds whatever the speaker brings: a logo, screenshots, a tweet,
+# a demo. Every talk brings one or two colours of its own (TH_*: a, b), used sparingly: a faint glow on the stage,
+# numbers, chips, the block behind a photo or tweet. No blob in show & tell. The stage is light or ink.
+# st_frame() is the frame alone (body = any HTML in a 1760 x 770 box); the st_* layouts below are common fillings.
 ST_X, ST_TOP, ST_BOTTOM = 80, 230, 80
 ST_W, ST_H = 1920 - 2 * ST_X, 1080 - ST_TOP - ST_BOTTOM  # 1760 x 770
-ST_CAM = (0.19, 0.745, 0.3, 40)  # blob perched on the stage's top-right corner
+ST_CAM = (0.19, 1.6, 0.3, 40)  # no blob in show & tell: it leaves the slide to the right
 CREAM = "#F5F3EE"
+TH_DEFAULT = dict(a="#FF5C8A", b="#7C6BFF")
+TH_T3 = dict(a="#16C784", b="#22D3EE")      # T3 Code: the teal-to-cyan of its own charts
+TH_PSTACK = dict(a="#FFA931", b="#9D7BFF")  # pstack: amber workshop light + violet neon of its launch cover
 
 
-def st_frame(cat, body, tone="light", pad=72, speaker="Peter Wimberger", center=False):
-    dark = tone == "ink"
-    bg, fg = (INK, CREAM) if dark else (TILE_BG, INK)
+def rgba(hex_, alpha):
+    h = hex_.lstrip("#")
+    return f"rgba({int(h[0:2], 16)},{int(h[2:4], 16)},{int(h[4:6], 16)},{alpha})"
+
+
+def st_frame(cat, body, th=TH_DEFAULT, tone="light", pad=72, speaker="Peter Wimberger", center=False):
+    a, b = th["a"], th["b"]
+    bg, fg = {
+        "light": (f"radial-gradient(900px 620px at 100% 0%,{rgba(b, .12)},transparent 70%),"
+                  f"radial-gradient(800px 560px at 0% 100%,{rgba(a, .12)},transparent 70%),{TILE_BG}", INK),
+        "ink": (f"radial-gradient(900px 620px at 100% 0%,{rgba(b, .12)},transparent 70%),"
+                f"radial-gradient(800px 560px at 0% 100%,{rgba(a, .12)},transparent 70%),{INK}", CREAM),
+        "accent": (f"linear-gradient(120deg,{a},{b})", INK),
+    }[tone]
     lay = "display:flex;align-items:center;justify-content:center;" if center else ""
-    html = (f'<div class="abs" style="left:{ST_X}px;top:58px"><div class="mono" style="font-size:22px">Show &amp; Tell'
+    dots = "".join(f'<span style="width:16px;height:16px;border-radius:50%;background:{c};outline:2px solid {INK}"></span>'
+                   for c in (a, b))
+    html = (f'<div class="abs" style="left:{ST_X}px;top:58px"><div class="mono" style="font-size:22px;display:flex;'
+            f'align-items:center;gap:12px"><span style="display:flex;gap:6px">{dots}</span>Show &amp; Tell'
             f'{" &#183; " + speaker if speaker else ""}</div>'
             f'<h2 style="font-size:96px;margin-top:14px;white-space:nowrap">{cat}</h2></div>'
             f'<div class="abs stage" style="left:{ST_X}px;top:{ST_TOP}px;width:{ST_W}px;height:{ST_H}px;'
@@ -872,118 +889,180 @@ def st_frame(cat, body, tone="light", pad=72, speaker="Peter Wimberger", center=
 
 def st_ph(label, w="100%", h="100%", dark=False, extra=""):
     """Dashed placeholder box for an image / screenshot that is not there yet."""
-    c = "rgba(245,243,238,.5)" if dark else MUTED
+    c = "rgba(245,243,238,.55)" if dark else MUTED
     return (f'<div style="width:{w};height:{h};border:2px dashed {c};border-radius:24px;display:flex;align-items:center;'
             f'justify-content:center;{extra}"><span class="mono" style="font-size:22px;color:{c}">{label}</span></div>')
+
+
+def img_uri(src):
+    ext = src.rsplit(".", 1)[-1]
+    return data_uri(src, {"jpg": "image/jpeg", "svg": "image/svg+xml"}.get(ext, f"image/{ext}"))
 
 
 def st_img(src, w="100%", h="100%", fit="contain", extra=""):
     if not src:
         return st_ph("[Image]", w, h, extra=extra)
-    ext = src.rsplit(".", 1)[-1]
-    mime = {"jpg": "image/jpeg", "svg": "image/svg+xml"}.get(ext, f"image/{ext}")
-    return f'<img src="{data_uri(src, mime)}" alt="" style="width:{w};height:{h};object-fit:{fit};{extra}">'
+    return f'<img src="{img_uri(src)}" alt="" style="width:{w};height:{h};object-fit:{fit};display:block;{extra}">'
 
 
-def st_cover(ed, cat="[Category]", logo=None, name="[Tool]", tag="[One line: what it is]", url=""):
-    """Talk opener: the tool's logo, its name right of it, one line under the name."""
-    body = (f'<div style="display:flex;align-items:center;gap:72px">'
-            f'<div style="width:300px;height:300px;flex:none">{st_img(logo) if logo else st_ph("[Logo]")}</div>'
+def chip(text, bg, fg=INK, size=26):
+    return (f'<span style="display:inline-block;background:{bg};color:{fg};font-family:\'IBM Plex Mono\',monospace;'
+            f'font-size:{size}px;letter-spacing:.04em;padding:10px 20px;border-radius:999px;outline:2px solid {INK}">{text}</span>')
+
+
+def st_cover(ed, cat="[Category]", th=TH_DEFAULT, logo=None, name="[Tool]", tag="[One line: what it is]", url="", hero=None):
+    """Talk opener. logo: square logo left of the name, glowing in the talk's colours. hero: a wide picture instead,
+    filling the stage, the name set on its dark left half."""
+    if hero:
+        body = (f'<div style="position:absolute;inset:0;background:url({img_uri(hero)}) right center/cover"></div>'
+                f'<div style="position:absolute;inset:0;background:linear-gradient(90deg,{INK} 18%,{rgba(INK, .85)} 42%,transparent 72%)"></div>'
+                f'<div style="position:relative;max-width:900px;color:{CREAM}">'
+                f'<h2 style="font-size:200px;line-height:.9">{name}</h2>'
+                f'<div style="font-size:44px;font-weight:600;line-height:1.2;margin-top:36px">{tag}</div>'
+                + (f'<div style="margin-top:34px">{chip(url, th["a"])}</div>' if url else "") + '</div>')
+        return _hero_frame(cat, body, th)
+    glow = f'box-shadow:0 0 0 14px {rgba(th["a"], .35)},0 30px 120px {rgba(th["b"], .75)};'
+    body = (f'<div style="display:flex;align-items:center;gap:84px">'
+            f'<div style="width:300px;height:300px;flex:none;border-radius:44px;transform:rotate(-5deg);{glow}overflow:hidden">'
+            f'{st_img(logo) if logo else st_ph("[Logo]")}</div>'
             f'<div><h2 style="font-size:190px;line-height:.9">{name}</h2>'
-            f'<div style="font-size:42px;font-weight:500;color:{MUTED};margin-top:30px">{tag}</div>'
-            + (f'<div class="mono" style="font-size:24px;color:{INK};margin-top:26px">{url}</div>' if url else "")
+            f'<div style="font-size:44px;font-weight:600;margin-top:34px">{tag}</div>'
+            + (f'<div style="margin-top:30px">{chip(url, th["a"])}</div>' if url else "")
             + '</div></div>')
-    return st_frame(cat, body, center=True)
+    return st_frame(cat, body, th, center=True)
 
 
-_HAND = (f'<svg viewBox="0 0 24 24" width="120" height="120" fill="none" stroke="{INK}" stroke-width="1.4" '
-         f'stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M18 11V6a2 2 0 0 0-4 0v5"/>'
-         f'<path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/>'
-         f'<path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>')
+def _hero_frame(cat, body, th):
+    cam, html = st_frame(cat, body, th, tone="ink", pad=96)
+    return cam, html.replace("padding:96px;", "padding:96px;display:flex;align-items:center;", 1)
 
 
-def st_poll(ed, cat="[Category]", qs=("[Who uses it?]", "[Who has heard of it?]")):
-    """Show of hands: one big question per row, a hand in front."""
-    rows = "".join(f'<div style="display:flex;align-items:center;gap:56px;padding:48px 0;'
-                   f'{"border-top:2px solid " + INK if k else ""}">{_HAND}'
+def _hand(stroke):
+    return (f'<svg viewBox="0 0 24 24" width="92" height="92" fill="none" stroke="{stroke}" stroke-width="1.6" '
+            f'stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0v5"/>'
+            f'<path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/>'
+            f'<path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>')
+
+
+def st_poll(ed, cat="[Category]", th=TH_DEFAULT, qs=("[Who uses it?]", "[Who has heard of it?]")):
+    """Show of hands: one big question per row, a raised hand on a coloured disc in front."""
+    cols = (th["a"],)
+    rows = "".join(f'<div style="display:flex;align-items:center;gap:56px;padding:44px 0;'
+                   f'{"border-top:2px solid " + INK if k else ""}">'
+                   f'<div style="width:160px;height:160px;flex:none;border-radius:50%;background:{cols[k % len(cols)]};'
+                   f'outline:2px solid {INK};outline-offset:8px;display:flex;align-items:center;justify-content:center;'
+                   f'">{_hand(INK)}</div>'
                    f'<h2 style="font-size:110px">{q}</h2></div>' for k, q in enumerate(qs))
-    return st_frame(cat, f'<div style="width:100%">{rows}</div>', pad=96, center=True)
+    return st_frame(cat, f'<div style="width:100%">{rows}</div>', th, pad=96, center=True)
 
 
-def st_what(ed, cat="[Category]", term="[What it is, in a few words]", lead="[One sentence that explains it]",
+def st_what(ed, cat="[Category]", th=TH_DEFAULT, term="[What it is, in a few words]", lead="[One sentence that explains it]",
             facts=(("[Key]", "[Value]"),) * 4, picks=(("[Feature]", "[Why it matters to me]"),) * 3,
-            picks_label="Why I use it"):
-    """What the thing is: term + one sentence, a few hard facts (left), and the speaker's own picks (right, ink cards)."""
-    fx = "".join(f'<div style="display:flex;gap:28px;border-top:1px solid {MUTED};padding:16px 0">'
-                 f'<span class="mono" style="font-size:20px;width:190px;flex:none;padding-top:6px">{k}</span>'
-                 f'<span style="font-size:30px;font-weight:500;line-height:1.25">{v}</span></div>' for k, v in facts)
-    pk = "".join(f'<div style="background:{INK};color:{CREAM};border-radius:26px;padding:28px 36px;display:flex;gap:28px;'
-                 f'align-items:baseline"><span class="mono" style="font-size:22px;color:#B9B5AB">{k:02d}</span>'
-                 f'<div><div style="font-size:40px;font-weight:700;line-height:1.1">{t}</div>'
-                 f'<div style="font-size:27px;line-height:1.3;margin-top:8px;color:#D9D5CC">{w}</div></div></div>'
-                 for k, (t, w) in enumerate(picks, 1))
-    body = (f'<div style="display:grid;grid-template-columns:minmax(0,1fr) 700px;gap:72px;width:100%;height:100%">'
-            f'<div><h2 style="font-size:76px;line-height:1">{term}</h2>'
-            f'<div style="font-size:34px;line-height:1.3;margin:24px 0 36px;color:{MUTED}">{lead}</div>{fx}</div>'
-            f'<div style="display:flex;flex-direction:column;gap:22px">'
+            picks_label="Why I use it", term_px=76):
+    """What the thing is: term + one sentence, a few hard facts (left), and the speaker's own picks (right, cards in the
+    talk's colours)."""
+    fx = "".join(f'<div style="display:flex;gap:28px;border-top:1px solid {MUTED};padding:15px 0">'
+                 f'<span class="mono" style="font-size:20px;width:180px;flex:none;padding-top:6px">{k}</span>'
+                 f'<span style="font-size:29px;font-weight:500;line-height:1.25">{v}</span></div>' for k, v in facts)
+    looks = ((TILE_BG, INK, th["a"]),) * 3
+    pk = "".join(f'<div style="background:{bg};color:{fg};border-radius:26px;padding:24px 32px;display:flex;gap:26px;'
+                 f'align-items:flex-start;outline:2px solid {INK}">'
+                 f'<span style="font-family:\'Tektur\',sans-serif;font-weight:800;font-size:54px;line-height:1;color:{num}">'
+                 f'{k + 1}</span><div><div style="font-size:38px;font-weight:700;line-height:1.1">{t}</div>'
+                 f'<div style="font-size:25px;line-height:1.3;margin-top:8px;opacity:.85">{w}</div></div></div>'
+                 for k, ((t, w), (bg, fg, num)) in enumerate(zip(picks, looks)))
+    body = (f'<div style="display:grid;grid-template-columns:minmax(0,1fr) 720px;gap:64px;width:100%;height:100%">'
+            f'<div><h2 style="font-size:{term_px}px;line-height:1.02">{term}</h2>'
+            f'<div style="font-size:32px;line-height:1.3;margin:24px 0 30px">{lead}</div>{fx}</div>'
+            f'<div style="display:flex;flex-direction:column;gap:22px;justify-content:center">'
             f'<div class="eyebrow" style="font-size:22px">{picks_label}</div>{pk}</div></div>')
-    return st_frame(cat, body)
+    return st_frame(cat, body, th)
 
 
-def st_person(ed, cat="[Category]", name="[Name]", photo=None, role="[@handle]", facts=("[Fact]",) * 4, tweet=None):
-    """Who's behind it: photo, name, a few facts; one tweet card on the right (tweet=False: none)."""
-    av = (f'<div style="width:200px;height:200px;flex:none;border-radius:50%;overflow:hidden;outline:2px solid {INK};'
-          f'outline-offset:8px">'
-          + (st_img(photo, fit="cover", extra="filter:grayscale(1)") if photo else st_ph("[Photo]", extra="border-radius:50%"))
-          + '</div>')
-    fx = "".join(f'<div style="display:flex;gap:22px;align-items:baseline;border-top:1px solid {MUTED};padding:16px 0">'
-                 f'<span class="mono" style="font-size:20px">{k:02d}</span><span style="font-size:32px;font-weight:500;'
-                 f'line-height:1.25">{f}</span></div>' for k, f in enumerate(facts, 1))
-    tw = ("" if tweet is False else
-          tweet_card(**{**dict(name=name, handle=role, text="[The tweet]", width=720, size=38), **(tweet or {})}))
-    body = (f'<div style="display:flex;gap:80px;width:100%;height:100%;align-items:center">'
-            f'<div style="flex:1;min-width:0"><div style="display:flex;gap:44px;align-items:center;margin-bottom:34px">{av}'
-            f'<div><h2 style="font-size:84px;white-space:nowrap">{name}</h2><div class="mono" style="font-size:24px;margin-top:14px">{role}</div>'
-            f'</div></div>{fx}</div>{tw}</div>')
-    return st_frame(cat, body)
+def company_logo(name, size=44):
+    """Company logo from assets/logo/companies/ (simple-icons / lobe-icons), in ink."""
+    path = f"assets/logo/companies/{name}.svg"
+    fill = INK if b'role="img"' in (ROOT / path).read_bytes() else None  # simple-icons carry no fill of their own
+    return (f'<img src="{data_uri(path, "image/svg+xml", fill)}" alt="{name}" title="{name}" '
+            f'style="width:{size}px;height:{size}px;display:block">')
 
 
-def st_shots(ed, cat="[Category]", shots=(("", "[Caption]"),), tone="ink"):
+def st_person(ed, cat="[Category]", th=TH_DEFAULT, name="[Name]", photo=None, role="[@handle]", facts=("[Fact]",) * 4,
+              tweet=None):
+    """Who's behind it: photo (on a disc in the talk's colour), name, a few facts; one tweet card on the right
+    (tweet=dict of tweet_card() arguments, False: none). A fact is a string, or (logos, text): company logos
+    (names from assets/logo/companies/) instead of company names, then a short text."""
+    av = (f'<div style="position:relative;width:210px;height:210px;flex:none">'
+          f'<div style="position:absolute;inset:0;border-radius:50%;background:{th["a"]};'
+          f'transform:translate(16px,14px);outline:2px solid {INK}"></div>'
+          f'<div style="position:absolute;inset:0;border-radius:50%;overflow:hidden;outline:2px solid {INK}">'
+          + (st_img(photo, fit="cover") if photo else st_ph("[Photo]", extra="border-radius:50%")) + '</div></div>')
+    def fact(f):
+        logos, text = f if isinstance(f, tuple) else ((), f)
+        lead = ("".join(company_logo(n) for n in logos) if logos else
+                f'<span style="width:14px;height:14px;flex:none;border-radius:50%;background:{th["a"]};outline:2px solid {INK}">'
+                f'</span>')
+        return (f'<div style="display:flex;gap:22px;align-items:center;border-top:1px solid {MUTED};padding:13px 0;'
+                f'min-height:72px"><span style="display:flex;gap:16px;align-items:center;flex:none">{lead}</span>'
+                f'<span style="font-size:31px;font-weight:500;line-height:1.25">{text}</span></div>')
+    fx = "".join(fact(f) for f in facts)
+    tw = ""
+    if tweet is not False:
+        card = tweet_card(**{**dict(name=name, handle=role, text="[The tweet]", width=760, size=36), **(tweet or {})})
+        tw = (f'<div style="position:relative;flex:none">'
+              f'<div style="position:absolute;inset:-10px;border-radius:46px;background:{th["a"]};'
+              f'transform:translate(18px,18px);outline:2px solid {INK}"></div><div style="position:relative">{card}</div></div>')
+    body = (f'<div style="display:flex;gap:72px;width:100%;height:100%;align-items:center">'
+            f'<div style="flex:1;min-width:0"><div style="display:flex;gap:52px;align-items:center;margin-bottom:30px">{av}'
+            f'<div><h2 style="font-size:84px;white-space:nowrap">{name}</h2>'
+            f'<div style="margin-top:16px">{chip(role, TILE_BG, size=22)}</div></div></div>{fx}</div>{tw}</div>')
+    return st_frame(cat, body, th)
+
+
+def st_shots(ed, cat="[Category]", th=TH_DEFAULT, shots=(("", "[Caption]"),), tone="ink"):
     """1-3 screenshots side by side on the stage, each with a short caption below."""
     dark = tone == "ink"
-    cap_c = "#B9B5AB" if dark else MUTED
-    cells = "".join(f'<figure style="margin:0;display:flex;flex-direction:column;gap:20px;min-width:0;height:100%">'
+    cells = "".join(f'<figure style="margin:0;display:flex;flex-direction:column;gap:22px;min-width:0;height:100%">'
                     f'<div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center">'
-                    + (st_img(src, extra="border-radius:14px") if src else st_ph("[Screenshot]", dark=dark))
-                    + f'</div><figcaption class="mono" style="font-size:22px;color:{cap_c};text-align:center">{cap}'
-                      f'</figcaption></figure>' for src, cap in shots)
-    body = (f'<div style="display:grid;grid-template-columns:repeat({len(shots)},minmax(0,1fr));gap:48px;'
+                    + (st_img(src, extra=f"border-radius:14px;box-shadow:0 20px 70px {rgba(th['b'], .45)}") if src
+                       else st_ph("[Screenshot]", dark=dark))
+                    + f'</div><figcaption style="text-align:center">{chip(cap, th["a"], size=22)}'
+                      f'</figcaption></figure>' for k, (src, cap) in enumerate(shots))
+    body = (f'<div style="display:grid;grid-template-columns:repeat({len(shots)},minmax(0,1fr));grid-template-rows:minmax(0,1fr);gap:48px;'
             f'width:100%;height:100%">{cells}</div>')
-    return st_frame(cat, body, tone=tone, pad=56)
+    return st_frame(cat, body, th, tone=tone, pad=56)
 
 
-def st_demo(ed, cat="[Category]", text="Live demo", sub="[What you are about to see]"):
-    body = (f'<div style="text-align:center"><div class="mono" style="font-size:28px;color:#B9B5AB;display:flex;'
-            f'align-items:center;justify-content:center;gap:18px"><span class="rec"></span>Live</div>'
-            f'<h2 style="font-size:220px;margin-top:30px">{text}</h2>'
-            f'<div style="font-size:40px;color:#D9D5CC;margin-top:34px">{sub}</div></div>')
-    return st_frame(cat, body, tone="ink", center=True)
+def st_demo(ed, cat="[Category]", th=TH_DEFAULT, text="Live demo"):
+    """Ink stage, the title, nothing else."""
+    return st_frame(cat, f'<h2 style="font-size:230px;line-height:.9;text-align:center">{text}</h2>', th, tone="ink",
+                    center=True)
 
 
-def st_split(ed, cat="[Category]", title="[Concept]", sub="[One line]", left="", right="",
-             left_label="[Before]", right_label="[After]"):
-    """Concept slide: title + line on top, two panes below (code | diagram, before | after, problem | fix)."""
-    pane = lambda lab, inner, dark: (
-        f'<div style="display:flex;flex-direction:column;gap:16px;min-width:0;height:100%">'
-        f'<div class="eyebrow" style="font-size:22px">{lab}</div>'
-        f'<div style="flex:1;min-height:0;border-radius:26px;padding:36px 40px;'
-        f'{"background:" + INK + ";color:" + CREAM if dark else "border:2px solid " + INK};overflow:hidden">'
+def st_split(ed, cat="[Category]", th=TH_DEFAULT, title="[Concept]", sub="[One line]", left="", right="",
+             left_label="[Before]", right_label="[After]", foot=""):
+    """Concept slide: title + line on top, two panes below (code | diagram, before | after, problem | fix), an optional
+    foot line under them."""
+    pane = lambda lab, inner, dark, col: (
+        f'<div style="display:flex;flex-direction:column;gap:14px;min-width:0;height:100%">'
+        f'<div>{chip(lab, col, size=20)}</div>'
+        f'<div style="flex:1;min-height:0;border-radius:26px;padding:30px 38px;outline:2px solid {INK};'
+        f'background:{INK if dark else rgba(col, .16)};color:{CREAM if dark else INK};overflow:hidden">'
         f'{inner or st_ph("[Code / diagram]", dark=dark)}</div></div>')
     body = (f'<div style="display:flex;flex-direction:column;width:100%;height:100%">'
-            f'<h2 style="font-size:76px">{title}</h2><div style="font-size:34px;color:{MUTED};margin:16px 0 36px">{sub}</div>'
-            f'<div style="flex:1;min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:48px">'
-            f'{pane(left_label, left, True)}{pane(right_label, right, False)}</div></div>')
-    return st_frame(cat, body, pad=64)
+            f'<h2 style="font-size:76px">{title}</h2>'
+            f'<div style="font-size:32px;margin:18px 0 28px">{sub}</div>'
+            f'<div style="flex:1;min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:minmax(0,1fr);gap:48px">'
+            f'{pane(left_label, left, True, th["a"])}{pane(right_label, right, False, th["b"])}</div>{foot}</div>')
+    return st_frame(cat, body, th, pad=60)
+
+
+def st_tweet(ed, cat="[Category]", th=TH_DEFAULT, **card_kw):
+    """One tweet, big, in the middle of the stage, on an offset block in the talk's colour."""
+    card = tweet_card(**{**dict(name="[Name]", handle="[@handle]", text="[The tweet]", width=1180, size=64), **card_kw})
+    body = (f'<div style="position:relative"><div style="position:absolute;inset:-10px;border-radius:46px;background:{th["a"]};'
+            f'transform:translate(22px,22px);outline:2px solid {INK}"></div><div style="position:relative">{card}</div></div>')
+    return st_frame(cat, body, th, center=True)
 
 
 def sticker(fn, img, left, top, width, rot=-8):
@@ -1443,7 +1522,134 @@ TAKEAWAYS = [
     )),
 ]
 
-NEWS = [*GOOGLE, *CHINA, *MISTRAL, *AGENTS, *SECURITY, *IPO, *POLITICS, *EU, *TERMS, *TAKEAWAYS]
+COMMUNITY_SRC = "via api.fxtwitter.com, views on 10 Nov"
+EXTRA = dict([
+    ("claude-api", partial(
+        l_drei, cat="Developers · Anthropic · 21 Oct", model="API 2026-10-21",
+        head="The first new Claude API version since 2023 breaks old calls",
+        items=(("Removed", "temperature, top_p, top_k",
+                "Sending any of them returns HTTP 400, even at the default value."),
+               ("Default", "SDK majors switch",
+                "Python SDK 2.0.0 and the ant CLI send the new version: a routine upgrade flips it."),
+               ("No rush", "2023-06-01 stays",
+                "The old version is not deprecated. Pin it, or drop the sampling parameters first.")))),
+    ("karpathy", partial(
+        l_tweet, cat="Community · 11 Oct", model="The sharp funnel", size=27, width=1400,
+        name="Andrej Karpathy", handle="@karpathy", avatar="assets/recap/karpathy-avatar.jpg",
+        text="- Napkin math somewhere around 6B people (~75% of the population) have barely come in contact with LLMs at all.<br>"
+             "- Around 1-2B (~20%) are casual and infrequent users of free-tier ChatGPT-like products. [&#8230;]<br>"
+             "- [&#8230;] Somewhere around 20M people (0.2%) see first-hand that large, complex projects that used to take them "
+             "weeks/months can now be completed by agents with a prompt. [&#8230;]<br>"
+             "- And finally we get to the ~5,000 people (~0.00006%) with access to frontier-grade systems internally. "
+             "<b>The external world has seen the preview.</b>",
+        meta="21:12 · 11 Oct 2026 · 7.0M views")),
+    ("ram-zitat", partial(
+        l_statement, model="Sam Altman", size=64, top=200,
+        text="&#8220;[It&#8217;s] quite terrible to have everybody [&#8230;] have a bunch of the world&#8217;s limited supply "
+             "of DRAM sitting in their own computer.&#8221;",
+        src="Cheeky Pint podcast with John Collison, 29 Oct 2026")),
+    ("ram-tweet", partial(
+        l_tweet, cat="Community · r/LocalLLaMA&#8217;s and r/OpenAI&#8217;s #1 post of the month", model="Ram Altman",
+        size=56, width=1000, name="Sam Altman", handle="@sama", avatar="assets/recap/sama-avatar.jpg",
+        text=f'<span style="display:block;font-size:34px;line-height:1.3;color:{MUTED}">Replying to @jestermolecule: &#8220;can u rename your x to ram altman!&#8221;</span>'
+             "<br>ok yeah",
+        meta="06:04 · 4 Nov 2026 · 2.5M views")),
+    ("ram-meme", partial(l_fullscreen, img="assets/recap/ram-precious.jpg", bg="#C9A57A", credit="r/OpenAI, November 2026")),
+    ("black-october", partial(
+        l_drei, cat="Security · Wiz, 30 Oct", model="Black October",
+        head="AI dev platforms were breached for the keys in your env vars",
+        items=(("Who", "9 platforms in October",
+                "Fireworks, Railway, Warp, Lightning AI, Northflank and more; in November also NVIDIA Brev, Trigger.dev."),
+               ("What", "Your AI API keys",
+                "Railway: env vars of up to ~100,000 workspaces exposed. In two traced cases, stolen keys were tried within 30 minutes."),
+               ("Do this", "Rotate, scope, cap",
+                "Rotate keys stored on hosting platforms, one key per service, spend limits on. Google saw victims billed $100k+ a day.")))),
+])
+
+_TERM = dict(TERMS)
+# The recap in story order: releases at a glance, the frontier (Anthropic, Google, Meta), open weights (China, Europe;
+# "abliterated" belongs here), agents ("AI psychosis" follows them), security, politics (the midterms explain the IPO
+# dip), money, regulation, takeaways.
+_X = lambda *names: [(k, EXTRA[k]) for k in names]
+_SEC = dict(SECURITY)
+RECAP = [*RELEASES, *FABLE, *_X("claude-api"), *GOOGLE, *_X("karpathy"), *MUSE, *CHINA, *MISTRAL,
+         ("term-abliterated", _TERM["term-abliterated"]), *_X("ram-zitat", "ram-tweet", "ram-meme"),
+         *AGENTS, ("term-psychosis", _TERM["term-psychosis"]),
+         *[(k, _SEC[k]) for k in ("sandbox", "948-funnel", "948-preis", "php2shell-tweet", "php2shell-zeitleiste",
+                                  "sshole-zitat", "sshole-fakten")], *_X("black-october"),
+         *[(k, _SEC[k]) for k in ("2shell", "terminal2shell")], *POLITICS,
+         *[(k, dict(IPO)[k]) for k in ("ipo-tweet", "ipo-verlauf", "ipo-zahlen", "ipo-rang", "ipo-firmen")], *EU, *TAKEAWAYS]
+
+# ----------------------------------------------------------------- show & tell #1: Peter, T3 Code + pstack
+SHOW = "assets/show-tell"
+HARNESS, SKILL = "Harness of choice", "Skill showcase"
+HARNESS_T3, SKILL_PSTACK = f"{HARNESS}: T3 Code", f"{SKILL}: pstack"
+
+
+ST_ISM = ("ism", partial(
+    st_tweet, cat=SKILL, th=TH_PSTACK, name="Steve Ruiz", handle="@steveruizok",
+    avatar=f"{SHOW}/pstack/steveruizok-avatar.jpg", meta="31 Oct 2026 &#183; 2.1M views &#183; 8.4K likes",
+    text="good prompt &#8220;find all of the implicit state machines in my app&#8221;"))
+
+T3_SLIDES = [
+    ("t3-cover", partial(st_cover, cat=HARNESS, th=TH_T3, logo=f"{SHOW}/t3code/t3code-logo.svg", name="T3 Code",
+                         tag="An open-source control plane for coding agents", url="t3.codes")),
+    ("t3-poll", partial(st_poll, cat=HARNESS_T3, th=TH_T3, qs=("Who&#8217;s using it?", "Who&#8217;s heard of it?"))),
+    ("t3-what", partial(
+        st_what, cat=HARNESS_T3, th=TH_T3, term="One app for all your coding agents",
+        lead="Drives the agents you already pay for: Codex, Claude Code, Cursor, Grok, OpenCode, Antigravity &amp; more.",
+        facts=(("Launched", "7 Mar 2026 &#183; now v0.1.8 (9 Nov)"), ("Open source", "MIT &#183; 55k+ GitHub stars"),
+               ("Runs on", "Windows, macOS, Linux, browser, iOS, Android"),
+               ("Price", "Free &#183; bring your own subscriptions")),
+        picks=(("Limits UI", "What&#8217;s left of every Claude &amp; Codex plan, when it resets, across accounts"),
+               ("Many machines, remote control", "Laptop, server &amp; phone in one sidebar; agents hand work to other machines"),
+               ("Integrated source control", "Worktrees, diffs, PRs &amp; stacks; it watches a PR until CI is green")))),
+    ("t3-theo", partial(
+        st_person, cat=HARNESS_T3, th=TH_T3, name="Theo Browne", role="@theo &#183; t3.gg",
+        photo=f"{SHOW}/theo/theo-avatar.jpg",
+        facts=((("youtube",), "578K subscribers"), (("twitch",), "Ex-engineer, 2017&#8211;2021"),
+               (("ycombinator",), "YC alum &#183; T3 Chat"), "Has AI psychosis &#8594;"),
+        tweet=dict(name="Theo - t3.gg", handle="@theo", avatar=f"{SHOW}/theo/theo-avatar.jpg", size=27, width=760,
+                   meta="25 Oct 2026 &#183; 174K views",
+                   text="To be fair, I haven&#8217;t shipped much since Opus 5.5 dropped. [&#8230;]<br>"
+                        "- ts-rust, a complete rewrite of Typescript compiler in Rust [&#8230;]<br>"
+                        "- lust-lang, an alternative toolchain for a subset of rust that compiles 100x faster<br>[&#8230;]<br>"
+                        "- <b>t3os</b> (private for now), the start of my &#8220;perfect os for agents&#8221;. "
+                        "Got 5 boxes running it already &#128520;<br>[&#8230;]<br>Pretty slow month."))),
+    ("t3-shots", partial(st_shots, cat=HARNESS, th=TH_T3,
+                         shots=(("", "Usage &#8594; Limits"), ("", "Environments"), ("", "Source control")))),
+    ("t3-demo", partial(st_demo, cat=HARNESS, th=TH_T3)),
+]
+
+PSTACK_SLIDES = [
+    ST_ISM,
+    ("pstack-cover", partial(st_cover, cat=SKILL, th=TH_PSTACK, name="pstack",
+                             hero=f"{SHOW}/pstack/pstack-launch-article-cover-2026-05-25.jpg",
+                             tag="poteto&#8217;s engineering skills for coding agents", url="/pstack:poteto-mode")),
+    ("pstack-poteto", partial(
+        st_person, cat=SKILL_PSTACK, th=TH_PSTACK, name="Lauren Tan", role="@poteto", photo=f"{SHOW}/pstack/lauren-tan.jpg",
+        facts=((("xai",), "Now: Grok, SpaceX AI"), (("react",), "React Compiler core team"),
+               (("cursor", "meta", "netflix"), "Before"), "pstack, open source since 25 May 2026"),
+        tweet=dict(name="poteto", handle="@poteto", avatar=f"{SHOW}/pstack/poteto-avatar.jpg", size=34, width=720,
+                   meta="8 Nov 2026 &#183; replying to @steveruizok",
+                   text="use /create-formal-verification-skill to model these state machines, one skill per subsystem. "
+                        "and use /statechart to visualize my most important user flows"))),
+    ("pstack-what", partial(
+        st_what, cat=SKILL_PSTACK, th=TH_PSTACK, term="Skills that make agents engineer", picks_label="What I reach for",
+        lead="Her everyday workflow as agent skills: <b>/poteto-mode</b> picks a playbook, delegates, and wants proof it works.",
+        facts=(("Size", "58 skills (24 of them principles), 23 playbooks"), ("Runs in", "Cursor &amp; Claude Code"),
+               ("Install", '<span class="mono" style="font-size:24px;color:inherit;text-transform:none">'
+                           '/plugin install pstack@cursor-plugins</span>'),
+               ("Models", "Per role, multi-model panels (/setup-pstack)")),
+        picks=(("/poteto-mode", "One entry point: reads the task, runs the right playbook"),
+               ("/statechart", "TLA+ model &#8594; chart, with the shortest path to every broken rule"),
+               ("/why &#183; /how", "Investigations that end in evidence, not vibes")))),
+    ("pstack-statechart", partial(st_shots, cat=SKILL, th=TH_PSTACK,
+                                  shots=((f"{SHOW}/pstack/poteto-implicit-state-machines-2026-11-05.jpg",
+                                          "/statechart on poteto&#8217;s game: 11 bugs, each a path through the states"),))),
+]
+SHOWTELL = PSTACK_SLIDES + T3_SLIDES  # skills first, then T3 Code, ending in its live demo
+
 
 QUESTIONS = [
     ("decider", partial(
@@ -1464,7 +1670,8 @@ QUESTIONS = [
 ]
 
 
-LAYOUTS = [("orga", l_orga), ("agenda", l_agenda), ("website", l_website), *RELEASES, *MUSE, *FABLE, *NEWS,
+LAYOUTS = [("orga", l_orga), ("agenda", l_agenda), ("website", l_website), *RECAP,
+           *SHOWTELL,
            ("diskussion-tempo", partial(
                l_cadence, question="Are the frontier labs pacing themselves?",
                bands=(("2026-09-01", "2026-09-03", "1&#8211;3 Sep: all four labs ship", "end"),
@@ -1504,7 +1711,9 @@ MASTER = [
                                 ("[Lab C]", (("2026-10-24", "[Model]", "pub"),))))),
     ("cadence", partial(l_cadence, question="[Question for the room?]", note="[Source: epoch.ai/eci]")),
     ("labs", partial(l_labs, question="[Question for the room?]", note="[Source: epoch.ai/eci]")),
-    ("talk", l_talk), ("statement", l_statement), ("frage", l_frage), ("tierlist", l_fullscreen), ("ende", l_ende),
+    ("talk", l_talk), ("statement", l_statement), ("frage", l_frage), ("tierlist", l_fullscreen),
+    ("st-cover", st_cover), ("st-poll", st_poll), ("st-what", st_what), ("st-person", st_person), ("st-shots", st_shots),
+    ("st-split", st_split), ("st-tweet", st_tweet), ("st-demo", st_demo), ("ende", l_ende),
 ]
 
 # the master deck's edition: placeholders only, nothing from a real edition except the permanent links
@@ -1551,9 +1760,10 @@ def build(ed, layouts, dest, title):
         base = getattr(fn, "func", fn)
         if base is l_fullscreen:  # no chrome on a full-bleed image
             add(f"{k:02d}-{name}", cam, html)
-        elif base.__name__.startswith("st_"):  # show & tell: its own header, only the slide number from the deck
-            add(f"{k:02d}-{name}", cam, html + f'<div class="abs mono" style="right:{CORNER}px;top:{CORNER - 24}px;'
-                                                f'font-size:22px">{k:02d} / {n:02d}</div>')
+        elif base.__name__.startswith("st_"):  # show & tell: its own header; edition, date and slide number top right
+            add(f"{k:02d}-{name}", cam, html + f'<div class="abs mono" style="right:{CORNER}px;top:{CORNER - 22}px;'
+                                                f'font-size:22px">WAISS &#183; {ed["edition"]} &#183; {ed["datum"]}'
+                                                f'<span style="margin-left:40px">{k:02d} / {n:02d}</span></div>')
         else:
             add(f"{k:02d}-{name}", cam, html + chrome(k, n, ed, with_logo=name != "orga"))
 

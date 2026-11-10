@@ -1,0 +1,28 @@
+{
+ "bg": {
+  "hex": "#F5F3EE",
+  "name": "Off-White",
+  "use": "Hintergrund, Flächen"
+ },
+ "ink": {
+  "hex": "#1F1E1B",
+  "name": "Tinte",
+  "use": "Text, Wortmarke, Linien. Die einzige dunkle Farbe."
+ },
+ "muted": {
+  "hex": "#66635C",
+  "name": "Grau",
+  "use": "Nebentext, Daten, Bildunterschriften"
+ },
+ "tile": {
+  "hex": "#FCFBF8",
+  "name": "Kachel",
+  "use": "Karten und Kacheln auf dem Hintergrund"
+ },
+ "line": {
+  "hex": "#C9C5BB",
+  "name": "Linie",
+  "use": "Rahmen, Trennlinien"
+ },
+ "gradient": "linear-gradient(160deg, #F9F8F4 0%, #F5F3EE 48%, #EDEAE2 100%)"
+}

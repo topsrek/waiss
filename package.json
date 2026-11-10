@@ -8,6 +8,7 @@
     "icons": "node tools/icons.js",
     "deck": "python -X utf8 tools/deck.py && node tools/export-deck.js",
     "site": "python -X utf8 tools/site.py",
+    "brandkit": "python -X utf8 tools/brandkit.py",
     "build": "npm run deck && npm run site"
   },
   "devDependencies": {

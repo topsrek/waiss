@@ -40,6 +40,18 @@ Ein nicht-newtonsches, metaball-artiges Objekt, angelehnt an einen 70er-Jahre-Se
 - Luma-Cover: Variante 2, Zoom 1,47, shift 0,075 / −0,15, Rotation −90°
 - In der Präsentation steht er im Hintergrund und bewegt sich beim Folienwechsel organisch. Er ist nicht dauerhaft animiert.
 
+## WAISS-Logo und Brand-Kit
+
+- **Lockup:** Blob + Secession-„WAISS“, in Tinte für helle und in Off-White für dunkle Hintergründe.
+- **Bildmarke:** der Blob allein, Variante 0 wie im Deck, um 120° gedreht, damit die Stacheln rundum aus dem Umriss stehen. Erst ab etwa 128 px: kleiner werden Glanz und Stacheln zu Pixelbrei.
+- **Icon:** darunter das Secession-W auf Off-White (`tools/site.py` `favicon()`, PNGs in `assets/icons/`), auch als Favicon der Website.
+
+`npm run brandkit` (`tools/brandkit.py`) rendert alles mit demselben Shader und schreibt:
+
+- `assets/logo/waiss-blob.png` (1024², transparent), `waiss-lockup.png`, `waiss-lockup-hell.png`, `waiss-wortmarke(-hell).svg`
+- `exports/brand-kit/`: das Kit mit Übersicht `index.html`: Logos, Icon, die vier Blob-Varianten, Farben (`farben.css`/`.json`), Schriften (Desktop-TTF + OFL aus `assets/fonts/desktop/`, Webfonts), Secession-Alphabet, Telos-Circle-Absender
+- `exports/waiss-brand-kit.zip`: dasselbe als eine Datei
+
 ## Formate
 
 | Datei | Format | Status |

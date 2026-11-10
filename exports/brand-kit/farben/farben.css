@@ -1,0 +1,8 @@
+:root {
+  --waiss-bg: #F5F3EE; /* Off-White: Hintergrund, Flächen */
+  --waiss-ink: #1F1E1B; /* Tinte: Text, Wortmarke, Linien. Die einzige dunkle Farbe. */
+  --waiss-muted: #66635C; /* Grau: Nebentext, Daten, Bildunterschriften */
+  --waiss-tile: #FCFBF8; /* Kachel: Karten und Kacheln auf dem Hintergrund */
+  --waiss-line: #C9C5BB; /* Linie: Rahmen, Trennlinien */
+  --waiss-gradient: linear-gradient(160deg, #F9F8F4 0%, #F5F3EE 48%, #EDEAE2 100%);
+}

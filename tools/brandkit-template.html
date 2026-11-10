@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WAISS Brand Kit</title>
+<link rel="icon" href="icon/waiss-w.svg" type="image/svg+xml">
+<link rel="stylesheet" href="schrift/web/fonts.css">
+<link rel="stylesheet" href="farben/farben.css">
+<style>
+:root{--pad:clamp(16px,5vw,72px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--waiss-bg) var(--waiss-gradient) fixed;color:var(--waiss-ink);
+  font:18px/1.55 'Archivo',system-ui,sans-serif}
+main{max-width:1180px;margin:0 auto;padding:var(--pad)}
+h1,h2,h3{font-family:'Tektur',sans-serif;font-weight:800;line-height:1;margin:0}
+h2{font-size:clamp(32px,5vw,48px);margin-bottom:28px}
+h3{font-size:22px;margin-bottom:10px}
+.eyebrow,code,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;letter-spacing:.08em;color:var(--waiss-muted)}
+.eyebrow{text-transform:uppercase;display:block;margin-bottom:14px}
+code{letter-spacing:0;font-size:13px}
+section{padding:72px 0;border-top:1px solid var(--waiss-line)}
+p{max-width:68ch;margin:0 0 14px}
+a{color:inherit;text-underline-offset:3px}
+img{display:block;max-width:100%;height:auto}
+.hero{padding:24px 0 72px}
+.hero img{width:min(760px,100%)}
+.hero p{font-size:22px;margin-top:28px;color:var(--waiss-muted)}
+.grid{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.card{background:var(--waiss-tile);border:1px solid var(--waiss-line);border-radius:18px;padding:24px;display:flex;flex-direction:column;gap:12px}
+.card.dark{background:var(--waiss-ink);border-color:var(--waiss-ink);color:var(--waiss-bg)}
+.card .art{min-height:180px;display:flex;align-items:center;justify-content:center}
+.card .dl{display:flex;flex-wrap:wrap;gap:6px 14px}
+.dark .eyebrow,.dark code{color:#B9B5AC}
+.wide{grid-column:1/-1}
+.icons{display:flex;align-items:flex-end;gap:22px;flex-wrap:wrap}
+.icons figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px}
+.icons img{image-rendering:auto}
+.sw{display:flex;flex-direction:column;gap:4px}
+.chip{height:120px;border-radius:14px;border:1px solid var(--waiss-line);margin-bottom:10px}
+.sw span{font-size:15px;color:var(--waiss-muted)}
+.grad{height:120px;border-radius:14px;border:1px solid var(--waiss-line);background:var(--waiss-gradient)}
+.type{display:grid;gap:20px}
+.type .card{flex-direction:row;flex-wrap:wrap;align-items:baseline;gap:8px 28px}
+.type .sample{flex:1 1 420px;min-width:0;overflow-wrap:anywhere}
+.type .meta{flex:0 0 240px}
+.s-head{font-family:'Tektur';font-weight:800;font-size:clamp(40px,7vw,72px);line-height:1}
+.s-body{font-size:22px;line-height:1.45}
+.s-mono{font-family:'IBM Plex Mono';font-size:18px;letter-spacing:.08em;text-transform:uppercase}
+.wm svg{width:100%;height:auto;max-width:640px}
+.alpha svg{width:100%;height:auto}
+.rules{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.rules ul{margin:0;padding-left:20px}
+.rules li{margin-bottom:8px}
+.tree{white-space:pre;overflow-x:auto;font-family:'IBM Plex Mono',monospace;font-size:14px;line-height:1.6;
+  background:var(--waiss-tile);border:1px solid var(--waiss-line);border-radius:18px;padding:24px}
+footer{padding:48px 0;color:var(--waiss-muted);font-size:15px;border-top:1px solid var(--waiss-line)}
+</style>
+</head>
+<body>
+<main>
+
+<header class="hero">
+  <span class="eyebrow">Brand Kit · Wiener AI Software Stammtisch</span>
+  <img src="logo/waiss-lockup-1200.png" alt="WAISS: Blob und Wortmarke" width="1200">
+  <p><b>WAISS</b>, gesprochen wie „weiß“: ein monatlicher Stammtisch in Wien für Leute, die mit KI bauen. Ein Format von Telos Circle.
+  Alles bleibt weiß, off-white und creme. Schwarz kommt nur als Tinte vor.</p>
+</header>
+
+<section id="logo">
+  <span class="eyebrow">01 · Logo</span>
+  <h2>Logo</h2>
+  <p>Es gibt drei Formen: das Lockup aus Blob und Wortmarke, den Blob allein als Bildmarke und das W als Icon.
+  Der Blob lebt von Glanz und Stacheln. Deshalb erst ab etwa 128 px verwenden, darunter das W.</p>
+  <div class="grid">
+    <div class="card wide"><span class="eyebrow">Lockup · heller Grund</span>
+      <div class="art"><img src="logo/waiss-lockup-1200.png" alt="Lockup in Tinte" width="1200"></div>
+      <div class="dl"><a href="logo/waiss-lockup.png">PNG 3335 px</a><a href="logo/waiss-lockup-1200.png">PNG 1200 px</a></div></div>
+    <div class="card dark wide"><span class="eyebrow">Lockup · dunkler Grund</span>
+      <div class="art"><img src="logo/waiss-lockup-hell-1200.png" alt="Lockup hell" width="1200"></div>
+      <div class="dl"><a href="logo/waiss-lockup-hell.png">PNG 3335 px</a><a href="logo/waiss-lockup-hell-1200.png">PNG 1200 px</a></div></div>
+    <div class="card"><span class="eyebrow">Bildmarke · ab 128 px</span>
+      <div class="art"><img src="logo/waiss-blob-512.png" alt="Der Blob" width="240"></div>
+      <div class="dl"><a href="logo/waiss-blob-2048.png">2048</a><a href="logo/waiss-blob-1024.png">1024</a><a href="logo/waiss-blob-512.png">512</a></div>
+      <span class="mono">transparent, Variante 0, 120° gedreht</span></div>
+    <div class="card"><span class="eyebrow">Icon · Favicon, App, Avatar</span>
+      <div class="art icons">
+        <figure><img src="icon/waiss-w-180-apple-touch.png" width="90" height="90" alt="W 180"><code>180</code></figure>
+        <figure><img src="icon/waiss-w-48.png" width="48" height="48" alt="W 48"><code>48</code></figure>
+        <figure><img src="icon/waiss-w-32.png" width="32" height="32" alt="W 32"><code>32</code></figure>
+        <figure><img src="icon/waiss-w-16.png" width="16" height="16" alt="W 16"><code>16</code></figure></div>
+      <div class="dl"><a href="icon/waiss-w.svg">SVG</a><a href="icon/favicon.ico">favicon.ico</a><a href="icon/waiss-w-512.png">512</a><a href="icon/waiss-w-192.png">192</a></div>
+      <span class="mono">Secession-W auf Off-White</span></div>
+  </div>
+</section>
+
+<section id="wortmarke">
+  <span class="eyebrow">02 · Wortmarke</span>
+  <h2>Wortmarke</h2>
+  <p>„WAISS“ im eigenen Secession-Alphabet: quadratische Zellen, an die Wiener Secession angelehnt, Strichstärke 16 von 100,
+  Buchstabenabstand 0,2 × Höhe, nur Großbuchstaben. Als Vektor (SVG, Kontur) für Druck und Web.</p>
+  <div class="grid">
+    <div class="card wide"><div class="art wm">__WORDMARK__</div>
+      <div class="dl"><a href="logo/waiss-wortmarke.svg">SVG Tinte</a><a href="logo/waiss-wortmarke-hell.svg">SVG hell</a>
+        <a href="logo/waiss-wortmarke.png">PNG Tinte</a><a href="logo/waiss-wortmarke-hell.png">PNG hell</a></div></div>
+    <div class="card wide"><span class="eyebrow">Secession-Alphabet</span><div class="alpha">__ALPHABET__</div>
+      <div class="dl"><a href="secession/secession-alphabet.svg">SVG</a></div>
+      <span class="mono">Keine Schriftdatei: gesetzt wird mit den Glyphen aus design/canvas/Txt.dc.html (render.txt()). Umlaute werden zu AE/OE/UE.</span></div>
+  </div>
+</section>
+
+<section id="farben">
+  <span class="eyebrow">03 · Farben</span>
+  <h2>Farben</h2>
+  <p>Weiß- und Cremetöne, eine Tinte. Keine Akzentfarbe.</p>
+  <div class="grid">__SWATCHES__</div>
+  <div style="margin-top:28px" class="sw"><div class="grad"></div><b>Verlauf</b><code>__GRAD__</code>
+    <span>Hintergrund von Folien und Website</span></div>
+  <p style="margin-top:20px"><a href="farben/farben.css">farben.css</a> · <a href="farben/farben.json">farben.json</a></p>
+</section>
+
+<section id="schrift">
+  <span class="eyebrow">04 · Schrift</span>
+  <h2>Schrift</h2>
+  <p>Drei Schriften, alle unter der SIL Open Font License (frei, auch kommerziell). Desktop-Dateien (TTF) zum Installieren in
+  <code>schrift/desktop/</code>, Webfonts (WOFF2 + fonts.css) in <code>schrift/web/</code>.</p>
+  <div class="type">
+    <div class="card"><div class="meta"><h3>Tektur</h3><span class="mono">Überschriften · 800</span></div>
+      <div class="sample s-head">Wiener AI Stammtisch</div></div>
+    <div class="card"><div class="meta"><h3>Archivo</h3><span class="mono">Fließtext · 400–600</span></div>
+      <div class="sample s-body">Jeden Monat: AI-Recap, Show &amp; Tell, offene Runde. Für alle, die mit KI bauen.</div></div>
+    <div class="card"><div class="meta"><h3>IBM Plex Mono</h3><span class="mono">Kleingedrucktes · 400/500</span></div>
+      <div class="sample s-mono">Di 10.11. · 18:00 · Café Ritter</div></div>
+  </div>
+</section>
+
+<section id="blob">
+  <span class="eyebrow">05 · Blob</span>
+  <h2>Blob</h2>
+  <p>Ein metaball-artiges Objekt, angelehnt an einen 70er-Jahre-Sessel aus verschmolzenen Kugeln. Die 14 Stacheln stehen für
+  das „jagged frontier“-Meme der KI. Echtzeit-WebGL in Folien und Website; hier als Standbilder der vier Varianten (1600 px, transparent).
+  Variante 0 ist die Form auf allen Folien und im Logo.</p>
+  <div class="grid">
+    <div class="card"><div class="art"><img src="blob/waiss-blob-variante-0.png" width="220" alt="Variante 0"></div><a href="blob/waiss-blob-variante-0.png">Variante 0</a></div>
+    <div class="card"><div class="art"><img src="blob/waiss-blob-variante-1.png" width="220" alt="Variante 1"></div><a href="blob/waiss-blob-variante-1.png">Variante 1</a></div>
+    <div class="card"><div class="art"><img src="blob/waiss-blob-variante-2.png" width="220" alt="Variante 2"></div><a href="blob/waiss-blob-variante-2.png">Variante 2</a></div>
+    <div class="card"><div class="art"><img src="blob/waiss-blob-variante-3.png" width="220" alt="Variante 3"></div><a href="blob/waiss-blob-variante-3.png">Variante 3</a></div>
+  </div>
+</section>
+
+<section id="regeln">
+  <span class="eyebrow">06 · Regeln</span>
+  <h2>Regeln</h2>
+  <div class="rules">
+    <div class="card"><h3>So</h3><ul>
+      <li>Lockup auf Off-White oder Weiß, helles Lockup auf Tinte oder dunklen Fotos.</li>
+      <li>Rund um das Logo mindestens eine Buchstabenhöhe frei lassen.</li>
+      <li>Unter 128 px das W-Icon statt des Blobs.</li>
+      <li>Absender: „by Telos Circle“ (<a href="telos-circle/telos-circle-by.svg">SVG</a>).</li></ul></div>
+    <div class="card"><h3>Nicht</h3><ul>
+      <li>Blob einfärben, verzerren oder mit Kontur versehen.</li>
+      <li>Wortmarke in einer anderen Schrift nachsetzen.</li>
+      <li>Farben außerhalb der Palette, vor allem keine Akzentfarbe.</li>
+      <li>Den Blob klein als Favicon: Stacheln und Glanz werden zu Pixelbrei.</li></ul></div>
+  </div>
+</section>
+
+<section id="dateien">
+  <span class="eyebrow">07 · Dateien</span>
+  <h2>Dateien</h2>
+  <div class="tree">logo/          Lockups (PNG), Wortmarke (SVG, PNG), Bildmarke Blob (PNG 512–2048)
+icon/          W-Icon: SVG, PNG 16–512, favicon.ico, Apple-Touch 180
+blob/          die vier Blob-Varianten, 1600 px, transparent
+farben/        farben.css (Custom Properties), farben.json
+schrift/       desktop/ TTF + Lizenz, web/ WOFF2 + fonts.css
+secession/     das Secession-Alphabet als SVG
+telos-circle/  Telos-Circle-Logos für den Absender</div>
+</section>
+
+<footer>WAISS · Wiener AI Software Stammtisch · by Telos Circle · erzeugt mit <code>npm run brandkit</code></footer>
+</main>
+</body>
+</html>

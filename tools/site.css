@@ -90,6 +90,8 @@ code,kbd{font-family:var(--mono);font-size:.86em;background:rgba(252,251,248,.8)
 @media (max-width:640px){
   .ed{grid-template-columns:1fr auto;grid-template-areas:"num st" "when when" "links links"}
 }
+.ed-sep{border-top:2px solid var(--ink);padding:14px 0;font:500 13px var(--mono);letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted)}
 /* an edition's own page */
 .edition .ed-h{margin:26px 0 22px}
 .big-num{height:clamp(90px,13vw,170px);width:auto;display:block}

@@ -17,6 +17,9 @@ document.querySelectorAll('[data-mail]').forEach(a => {
   }
   const tba = document.querySelector('[data-tba]');
   if (tba) tba.hidden = cards.some(c => c.dataset.day > today);
+  // "Past" goes right after the last edition that is over (the page may be older than today)
+  const sep = document.querySelector('[data-sep]'), past = cards.filter(c => c.dataset.state === 'past');
+  if (sep) { sep.hidden = !past.length; if (past.length) past[past.length - 1].after(sep); }
   document.querySelectorAll('[data-until]').forEach(e => { e.hidden = e.dataset.until < today; });
 })();
 

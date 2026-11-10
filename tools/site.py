@@ -191,11 +191,15 @@ def editions(eds, today):
            f'<div class="ed-when"><div class="ed-date">Date coming soon</div>'
            f'<div class="ed-place">About once a month in Vienna.</div></div>'
            f'<span class="st">Next</span><div class="ed-links">{ext(eds[-1]["links"]["discord"], "Discord", "lnk")}</div></li>')
+    # oldest on top; once an edition is over, a small "Past" sits between the past and the next ones
+    past = [e for e in eds if e["day"] < today]
+    sep = f'<li class="ed-sep" data-sep{"" if past else " hidden"}>&#8593; Past</li>'
+    rows = "".join(ed_row(e, today) for e in past) + sep + "".join(ed_row(e, today) for e in eds if e["day"] >= today)
     return f'''
 <section id="editions" data-cam="0.5,0.95,-0.32,140" data-cam-m="0.3,0.2,-0.4,140">
   <div class="wrap">
     <h2>Editions</h2>
-    <ol class="eds" id="eds">{tba}{"".join(ed_row(e, today) for e in eds[::-1])}</ol>
+    <ol class="eds" id="eds">{rows}{tba}</ol>
   </div>
 </section>'''
 

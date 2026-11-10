@@ -17,10 +17,12 @@ const path = require('path');
     const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
     page.on('console', (m) => m.type() === 'warning' || m.type() === 'error' ? console.warn(m.text()) : 0);
     await page.goto(url + suffix);
-    await page.waitForFunction(() => document.documentElement.dataset.ready === '1', null, { timeout: 120000 });
+    await page.waitForFunction(() => document.documentElement.dataset.ready === '1', null, { timeout: 300000 });
     await page.waitForTimeout(800); // slide fade-in
     return page;
   };
+  // SwiftShader can lose the very first WebGL context while it compiles the shader: warm it up once.
+  await (await open('#1')).close();
   for (let i = 0; i < slides.length; i++) {
     const page = await open('#' + (i + 1));
     const file = path.join(dst, slides[i] + '.png');

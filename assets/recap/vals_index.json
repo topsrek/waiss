@@ -1,0 +1,295 @@
+{
+ "source": "https://www.vals.ai/benchmarks/vals_index",
+ "updated": "2026-11-09",
+ "version": "2.2",
+ "models": [
+  {
+   "id": "anthropic/claude-fable-5-2",
+   "accuracy": 71.309,
+   "stderr": 0.956,
+   "cost_per_test": 17.939202,
+   "latency_s": 2621.822,
+   "tokens_per_test": 31311557.8
+  },
+  {
+   "id": "anthropic/claude-sonnet-5-5",
+   "accuracy": 70.854,
+   "stderr": 0.928,
+   "cost_per_test": 16.183857,
+   "latency_s": 5158.766,
+   "tokens_per_test": 78585324.5
+  },
+  {
+   "id": "google/gemini-4-carbon",
+   "accuracy": 70.45,
+   "stderr": 0.974,
+   "cost_per_test": 10.508065,
+   "latency_s": 2864.864,
+   "tokens_per_test": 18285886.0
+  },
+  {
+   "id": "anthropic/claude-opus-5-5",
+   "accuracy": 70.143,
+   "stderr": 1.004,
+   "cost_per_test": 24.772748,
+   "latency_s": 5071.089,
+   "tokens_per_test": 59457528.900000006
+  },
+  {
+   "id": "google/gemini-4-argon",
+   "accuracy": 69.389,
+   "stderr": 1.09,
+   "cost_per_test": 13.372731,
+   "latency_s": 2697.953,
+   "tokens_per_test": 23307600.9
+  },
+  {
+   "id": "meta/muse-wonder-full",
+   "accuracy": 66.787,
+   "stderr": 1.066,
+   "cost_per_test": 6.809627,
+   "latency_s": 3558.574,
+   "tokens_per_test": 18374572.4
+  },
+  {
+   "id": "openai/gpt-6-astra",
+   "accuracy": 65.023,
+   "stderr": 1.098,
+   "cost_per_test": 21.277828,
+   "latency_s": 2018.879,
+   "tokens_per_test": 8145002.399999999
+  },
+  {
+   "id": "meta/muse-wonder",
+   "accuracy": 64.877,
+   "stderr": 1.067,
+   "cost_per_test": 10.647504,
+   "latency_s": 2123.575,
+   "tokens_per_test": 33189077.700000003
+  },
+  {
+   "id": "openai/gpt-6.1-sol",
+   "accuracy": 63.944,
+   "stderr": 1.072,
+   "cost_per_test": 3.614054,
+   "latency_s": 2664.03,
+   "tokens_per_test": 9404488.6
+  },
+  {
+   "id": "kimi/kimi-k3.1-pro",
+   "accuracy": 62.52,
+   "stderr": 1.141,
+   "cost_per_test": 6.440192,
+   "latency_s": 3816.452,
+   "tokens_per_test": 20139657.7
+  },
+  {
+   "id": "deepseek/deepseek-v4.1-flash-1017",
+   "accuracy": 61.257,
+   "stderr": 1.055,
+   "cost_per_test": 0.65747,
+   "latency_s": 2394.709,
+   "tokens_per_test": 43902507.0
+  },
+  {
+   "id": "openai/gpt-6.1-terra",
+   "accuracy": 60.536,
+   "stderr": 0.994,
+   "cost_per_test": 2.939376,
+   "latency_s": 2383.274,
+   "tokens_per_test": 17589422.9
+  },
+  {
+   "id": "meta/muse-ember",
+   "accuracy": 60.475,
+   "stderr": 1.068,
+   "cost_per_test": 0.15305,
+   "latency_s": 902.371,
+   "tokens_per_test": 23133684.7
+  },
+  {
+   "id": "zai/glm-5.3",
+   "accuracy": 59.847,
+   "stderr": 1.111,
+   "cost_per_test": 8.524625,
+   "latency_s": 3864.087,
+   "tokens_per_test": 28151868.8
+  },
+  {
+   "id": "tencent/hy4",
+   "accuracy": 59.353,
+   "stderr": 1.081,
+   "cost_per_test": 1.720395,
+   "latency_s": 3091.465,
+   "tokens_per_test": 17491562.7
+  },
+  {
+   "id": "alibaba/qwen3.8-max-internal",
+   "accuracy": 59.045,
+   "stderr": 1.082,
+   "cost_per_test": 8.729516,
+   "latency_s": 6345.62,
+   "tokens_per_test": 26586482.299999997
+  },
+  {
+   "id": "anthropic/claude-haiku-5-5",
+   "accuracy": 58.727,
+   "stderr": 1.282,
+   "cost_per_test": 3.17475,
+   "latency_s": 2996.841,
+   "tokens_per_test": 38149359.7
+  },
+  {
+   "id": "grok/grok-4.7",
+   "accuracy": 58.615,
+   "stderr": 1.013,
+   "cost_per_test": 11.625468,
+   "latency_s": 2013.837,
+   "tokens_per_test": 11392339.6
+  },
+  {
+   "id": "xiaomi/mimo-v2.6-pro",
+   "accuracy": 57.813,
+   "stderr": 1.24,
+   "cost_per_test": 0.42958,
+   "latency_s": 4355.892,
+   "tokens_per_test": 17770531.5
+  },
+  {
+   "id": "mistralai/mistral-large-4-oss",
+   "accuracy": 56.527,
+   "stderr": 1.258,
+   "cost_per_test": 3.716552,
+   "latency_s": 2868.038,
+   "tokens_per_test": 23422374.9
+  },
+  {
+   "id": "thinkingmachines/inkling-2-small",
+   "accuracy": 56.081,
+   "stderr": 1.18,
+   "cost_per_test": 3.509318,
+   "latency_s": 3034.529,
+   "tokens_per_test": 108409413.3
+  },
+  {
+   "id": "google/gemini-3.8-flash",
+   "accuracy": 55.951,
+   "stderr": 1.141,
+   "cost_per_test": 5.025617,
+   "latency_s": 2158.482,
+   "tokens_per_test": 25060875.0
+  },
+  {
+   "id": "xiaomi/mimo-v2.6-flash",
+   "accuracy": 54.826,
+   "stderr": 1.114,
+   "cost_per_test": 0.221007,
+   "latency_s": 4027.975,
+   "tokens_per_test": 26861809.5
+  },
+  {
+   "id": "stepfun/step-5-preview",
+   "accuracy": 54.762,
+   "stderr": 1.163,
+   "cost_per_test": 2.73409,
+   "latency_s": 3928.913,
+   "tokens_per_test": 33651402.0
+  },
+  {
+   "id": "minimax/MiniMax-M3.1-flash",
+   "accuracy": 53.781,
+   "stderr": 1.067,
+   "cost_per_test": 0.659684,
+   "latency_s": 2597.835,
+   "tokens_per_test": 31773069.3
+  },
+  {
+   "id": "tencent/hy4-preview",
+   "accuracy": 53.209,
+   "stderr": 1.13,
+   "cost_per_test": 1.56824,
+   "latency_s": 3562.636,
+   "tokens_per_test": 19235008.8
+  },
+  {
+   "id": "deepseek/deepseek-v4-pro-0813",
+   "accuracy": 52.974,
+   "stderr": 1.044,
+   "cost_per_test": 2.499691,
+   "latency_s": 3482.913,
+   "tokens_per_test": 43347615.300000004
+  },
+  {
+   "id": "kimi/kimi-k3",
+   "accuracy": 52.955,
+   "stderr": 1.001,
+   "cost_per_test": 7.169465,
+   "latency_s": 4496.011,
+   "tokens_per_test": 15303341.7
+  },
+  {
+   "id": "openai/gpt-6-luna",
+   "accuracy": 52.322,
+   "stderr": 1.117,
+   "cost_per_test": 0.450147,
+   "latency_s": 1943.192,
+   "tokens_per_test": 17519084.599999998
+  },
+  {
+   "id": "zai/glm-5.3-flash",
+   "accuracy": 50.861,
+   "stderr": 1.255,
+   "cost_per_test": 2.048666,
+   "latency_s": 3830.634,
+   "tokens_per_test": 62417549.7
+  },
+  {
+   "id": "meta/muse-spark-open",
+   "accuracy": 48.567,
+   "stderr": 1.087,
+   "cost_per_test": 4.71792,
+   "latency_s": 4925.409,
+   "tokens_per_test": 9800786.5
+  },
+  {
+   "id": "inception/mercury-3",
+   "accuracy": 43.659,
+   "stderr": 1.227,
+   "cost_per_test": 0.477863,
+   "latency_s": 1325.888,
+   "tokens_per_test": 20322195.2
+  },
+  {
+   "id": "reflection/Beam-1.0",
+   "accuracy": 43.424,
+   "stderr": 1.062,
+   "cost_per_test": null,
+   "latency_s": 446.562,
+   "tokens_per_test": 5954438.2
+  },
+  {
+   "id": "baseten/nemotron-3.5-super-vl-120b-a12b",
+   "accuracy": 29.784,
+   "stderr": 1.025,
+   "cost_per_test": 0.627546,
+   "latency_s": 514.013,
+   "tokens_per_test": 10970410.2
+  },
+  {
+   "id": "thinkingmachines/inkling",
+   "accuracy": 28.961,
+   "stderr": 1.12,
+   "cost_per_test": 1.847767,
+   "latency_s": 1032.925,
+   "tokens_per_test": 7547595.5
+  },
+  {
+   "id": "thinkingmachines/inkling-small",
+   "accuracy": 27.588,
+   "stderr": 1.133,
+   "cost_per_test": 0.401307,
+   "latency_s": 986.441,
+   "tokens_per_test": 5384495.100000001
+  }
+ ]
+}

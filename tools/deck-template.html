@@ -92,14 +92,21 @@ function createBlob(cv){
 const ready=()=>document.fonts.ready.then(()=>{document.documentElement.dataset.ready='1';});
 
 if(PRINT){
-  // PDF fallback: every slide gets its own, static blob.
+  // PDF fallback: every slide gets its own, static blob. One WebGL context draws them one after the other into
+  // plain 2D canvases (Chrome allows only 16 WebGL contexts), after load so page.goto() doesn't time out.
   document.documentElement.classList.add('print');
-  slides.forEach((sl,i)=>{
-    const cv=document.createElement('canvas');cv.className='pb';cv.width=W;cv.height=H;
-    sl.insertBefore(cv,sl.firstChild);
-    const b=createBlob(cv),s=target(cams[i]);if(b)b.draw(s,s.ph,0.05,1);
+  const gcv=document.createElement('canvas');gcv.width=W;gcv.height=H;
+  const shots=slides.map(sl=>{const cv=document.createElement('canvas');cv.className='pb';cv.width=W;cv.height=H;
+    sl.insertBefore(cv,sl.firstChild);return cv;});
+  addEventListener('load',async()=>{
+    const b=createBlob(gcv);
+    for(let i=0;b&&i<slides.length;i++){
+      const s=target(cams[i]);b.draw(s,s.ph,0.05,1);
+      shots[i].getContext('2d').drawImage(gcv,0,0);
+      await new Promise(r=>setTimeout(r,0));
+    }
+    ready();
   });
-  ready();
 }else{
   const cv=document.getElementById('blob'),blob=createBlob(cv),stage=document.getElementById('stage');
   let scale=1,idx=-1,cur=null,raf=0;
@@ -126,7 +133,8 @@ if(PRINT){
     n=Math.max(0,Math.min(slides.length-1,n));
     if(n===idx)return;
     const first=idx<0;idx=n;
-    slides.forEach((s,i)=>s.classList.toggle('on',i===n));
+    slides.forEach((s,i)=>{s.classList.toggle('on',i===n);
+      s.querySelectorAll('video.clip').forEach(v=>{if(i===n)v.play().catch(()=>{});else{v.pause();v.currentTime=0;}});});
     history.replaceState(null,'','#'+(n+1));
     if(!blob)return;
     const goal=target(cams[n]);
@@ -141,7 +149,7 @@ if(PRINT){
     else if(e.key==='Home')go(0);else if(e.key==='End')go(slides.length-1);
     else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();}
   });
-  addEventListener('click',e=>go(e.clientX<innerWidth/3?idx-1:idx+1));
+  addEventListener('click',e=>{if(e.target.closest('a'))return;go(e.clientX<innerWidth/3?idx-1:idx+1);});
   addEventListener('hashchange',()=>go((parseInt(location.hash.slice(1))||1)-1));
   fit();
   go((parseInt(location.hash.slice(1))||1)-1,true);

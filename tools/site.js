@@ -18,23 +18,6 @@ document.querySelectorAll('[data-mail]').forEach(a => {
   const tba = document.querySelector('[data-tba]');
   if (tba) tba.hidden = cards.some(c => c.dataset.day > today);
   document.querySelectorAll('[data-until]').forEach(e => { e.hidden = e.dataset.until < today; });
-  // a long row starts scrolled to the next edition, the past ones stay to its left
-  const row = document.getElementById('eds'), first = cards.find(c => c.dataset.state !== 'past');
-  if (row && first && row.scrollWidth > row.clientWidth) row.scrollLeft = first.offsetLeft - row.offsetLeft - 24;
-})();
-
-/* ---- slides: one tab per edition ---- */
-(() => {
-  const tabs = [...document.querySelectorAll('[data-tab]')];
-  const show = id => tabs.forEach(t => {
-    const on = t.dataset.tab === id;
-    t.setAttribute('aria-selected', on);
-    document.getElementById(t.dataset.tab).toggleAttribute('data-off', !on);
-  });
-  tabs.forEach(t => t.addEventListener('click', () => show(t.dataset.tab)));
-  const fromHash = () => { const id = location.hash.slice(1); if (tabs.some(t => t.dataset.tab === id)) show(id); };
-  addEventListener('hashchange', fromHash);
-  fromHash();
 })();
 
 /* ---- the blob: same shader as the slides; it turns and travels when a new section reaches the middle ----

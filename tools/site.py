@@ -32,7 +32,6 @@ DOMAIN = "waiss.teloscircle.com"
 SITE = f"https://{DOMAIN}"
 REPO = "https://github.com/topsrek/waiss"
 VIENNA = ZoneInfo("Europe/Vienna")
-HOURS = 3  # calendar entry length; the open round has no fixed end
 TELOS = {
     "website": "https://www.teloscircle.com", "events": "https://events.teloscircle.com",
     "links": "https://links.teloscircle.com", "imprint": "https://events.teloscircle.com/imprint",
@@ -131,18 +130,6 @@ def place(ed):
     return f'{esc(ed["ort_lang"])} · {esc(ed["adresse"])}'
 
 
-def ics(ed):
-    fmt = lambda t: t.astimezone(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Telos Circle//WAISS//EN", "BEGIN:VEVENT",
-             f"UID:waiss-{ed['num']}@{DOMAIN}", f"DTSTAMP:{fmt(datetime.now(timezone.utc))}",
-             f"DTSTART:{fmt(ed['start'])}", f"DTEND:{fmt(ed['start'] + timedelta(hours=HOURS))}",
-             f"SUMMARY:WAISS {ed['edition']} – Wiener AI Software Stammtisch",
-             f"LOCATION:{ed['ort_lang']}\\, {ed['adresse'].replace(',', chr(92) + ',')}",
-             f"URL:{ed['luma'] or SITE}", f"DESCRIPTION:AI recap\\, show & tell and an open round. {ed['luma'] or SITE}",
-             "END:VEVENT", "END:VCALENDAR"]
-    return "\r\n".join(lines) + "\r\n"
-
-
 # ------------------------------------------------------------------------------------- sections
 def hero():
     return f'''
@@ -176,36 +163,39 @@ def state(day, today):
     return "past" if day < today else "today" if day == today else "upcoming"
 
 
-def ed_card(ed, today):
+def has_slides(ed):
+    return bool(ed["slides"] or ed.get("talks"))
+
+
+def ed_row(ed, today, pre=""):
     st = state(ed["day"], today)
     s = ed["start"]
     links = []
     if ed["luma"]:
         links.append(ext(ed["luma"], f'<span data-upcoming{" hidden" if st == "past" else ""}>Register</span>'
                                      f'<span data-past{"" if st == "past" else " hidden"}>Luma</span>', "lnk"))
-    links.append(f'<a class="lnk" href="{ed["slug"]}/waiss-{ed["slug"]}.ics" download data-upcoming'
-                 f'{" hidden" if st == "past" else ""}>Calendar</a>')
-    if ed["slides"] or ed.get("talks"):
-        links.append(f'<a class="lnk" href="#slides-{ed["slug"]}">Slides&nbsp;&#8595;</a>')
+    if has_slides(ed):
+        links.append(f'<a class="lnk" href="{pre}editions/{ed["slug"]}/">Slides&nbsp;&#8594;</a>')
     return (f'<li class="ed" data-day="{ed["day"]}" data-state="{st}">'
-            f'<div class="ed-top">{wordmark(ed["edition"], "num", "WAISS " + ed["edition"])}'
-            f'<span class="st" data-st>{st.capitalize()}</span></div>'
-            f'<div class="ed-date">{s:%a} {s.day} {s:%b %Y}</div>'
-            f'<div class="ed-place">{s:%H:%M} · {esc(ed["ort_lang"])}<br>{esc(ed["adresse"])}</div>'
+            f'{wordmark(ed["edition"], "num", "WAISS " + ed["edition"])}'
+            f'<div class="ed-when"><div class="ed-date">{s:%a} {s.day} {s:%b %Y} · {s:%H:%M}</div>'
+            f'<div class="ed-place">{esc(ed["ort_lang"])}, {esc(ed["adresse"])}</div></div>'
+            f'<span class="st" data-st>{st.capitalize()}</span>'
             f'<div class="ed-links">{"".join(links)}</div></li>')
 
 
 def editions(eds, today):
     nxt = int(re.sub(r"\D", "", eds[-1]["edition"])) + 1
     tba = (f'<li class="ed tba" data-tba{"" if all(e["day"] <= today for e in eds) else " hidden"}>'
-           f'<div class="ed-top">{wordmark(f"#{nxt}", "num", f"WAISS #{nxt}")}<span class="st">Next</span></div>'
-           f'<div class="ed-date">Date coming soon</div><div class="ed-place">About once a month in Vienna.</div>'
-           f'<div class="ed-links">{ext(eds[-1]["links"]["discord"], "Discord", "lnk")}</div></li>')
+           f'{wordmark(f"#{nxt}", "num", f"WAISS #{nxt}")}'
+           f'<div class="ed-when"><div class="ed-date">Date coming soon</div>'
+           f'<div class="ed-place">About once a month in Vienna.</div></div>'
+           f'<span class="st">Next</span><div class="ed-links">{ext(eds[-1]["links"]["discord"], "Discord", "lnk")}</div></li>')
     return f'''
 <section id="editions" data-cam="0.5,0.95,-0.32,140" data-cam-m="0.3,0.2,-0.4,140">
   <div class="wrap">
     <h2>Editions</h2>
-    <ol class="eds" id="eds">{"".join(ed_card(e, today) for e in eds)}{tba}</ol>
+    <ol class="eds" id="eds">{tba}{"".join(ed_row(e, today) for e in eds[::-1])}</ol>
   </div>
 </section>'''
 
@@ -224,8 +214,8 @@ def talk_kind(t):
     return "Slides" if t.get("html") else Path(talk_src(t)).suffix[1:].upper() if talk_src(t) else "Link"
 
 
-def slides_panel(ed, first):
-    s = ed["slug"]
+def slides_panel(ed, pre="", head=True):
+    s = pre + ed["slug"]
     parts = [(t, list(sl)) for t, sl in ed["slides"]]
     talks = ed.get("talks") or []
     if talks and not any("show" in t.lower() for t, _ in parts):
@@ -249,24 +239,42 @@ def slides_panel(ed, first):
                       f'<ul class="thumbs">{thumbs}</ul></div>')
     actions = (ext(f"{s}/", "Present", "btn") if ed["slides"] else "") + (
         f'<a class="btn ghost" href="{s}/waiss-{s}-slides.pdf" download>PDF</a>' if ed.get("pdf") else "")
-    return (f'<div class="panel" id="slides-{s}" role="tabpanel" aria-label="WAISS {esc(ed["edition"])}"'
-            f'{"" if first else " data-off"}><div class="panel-head"><div><div class="eyebrow">WAISS {esc(ed["edition"])}</div>'
-            f'<div class="panel-date">{when(ed)}</div></div><div class="btns">{actions}</div></div>{"".join(blocks)}</div>')
+    return (f'<div class="panel" id="slides-{ed["slug"]}"><div class="panel-head">'
+            + (f'<div><div class="eyebrow">WAISS {esc(ed["edition"])}</div><div class="panel-date">{when(ed)}</div></div>' if head else "")
+            + f'<div class="btns">{actions}</div></div>{"".join(blocks)}</div>')
 
 
 def slides(eds):
-    have = [e for e in eds if e["slides"] or e.get("talks")][::-1]
-    if not have:
+    """The current slides: the latest edition that has any. Older ones live on /editions/<n>/."""
+    cur = next((e for e in eds[::-1] if has_slides(e)), None)
+    if not cur:
         return ""
-    tabs = "".join(f'<button role="tab" data-tab="slides-{e["slug"]}" aria-selected="{"true" if k == 0 else "false"}">'
-                   f'{esc(e["edition"])}</button>' for k, e in enumerate(have))
+    older = [e for e in eds if has_slides(e) and e is not cur]
+    more = (f'<p class="sub">Earlier editions: ' + ", ".join(
+        f'<a class="lnk" href="editions/{e["slug"]}/">{esc(e["edition"])}</a>' for e in older[::-1]) + "</p>") if older else ""
     return f'''
 <section id="slides" data-cam="0.32,0.74,0.3,250" data-cam-m="0.26,0.2,0.42,250">
   <div class="wrap">
-    <h2>Slides</h2>
+    <h2>Current slides</h2>
     <p class="sub">Click a slide to present from there.</p>
-    <div class="tabs" role="tablist" aria-label="Edition">{tabs}</div>
-    {"".join(slides_panel(e, k == 0) for k, e in enumerate(have))}
+    {slides_panel(cur)}
+    {more}
+  </div>
+</section>'''
+
+
+def edition_page(ed):
+    """/editions/<n>/: one edition with all its slides."""
+    s = ed["start"]
+    luma = ext(ed["luma"], "Luma", "btn ghost") if ed["luma"] else ""
+    return f'''
+<section class="edition" data-cam="0.5,0.95,-0.32,140" data-cam-m="0.3,0.2,-0.4,140">
+  <div class="wrap">
+    <div class="eyebrow"><a href="../../#editions">&#8592; All editions</a></div>
+    <h1 class="ed-h">{wordmark(ed["edition"], "num big-num", "WAISS " + ed["edition"])}</h1>
+    <div class="ed-date">{s:%A} {s.day} {s:%B %Y} · {s:%H:%M}</div>
+    <div class="ed-place">{esc(ed["ort_lang"])}, {esc(ed["adresse"])}</div>
+    {slides_panel(ed, "../../", head=False).replace('<div class="btns">', '<div class="btns">' + luma, 1)}
   </div>
 </section>'''
 
@@ -510,6 +518,7 @@ def sitemap(eds, today):
     for e in eds:
         if e["slides"]:
             urls.append((f"{SITE}/{e['slug']}/", git_date(e["file"], *deck_src) or today))
+            urls.append((f"{SITE}/editions/{e['slug']}/", git_date(e["file"], *deck_src) or today))
     urls.append((f"{SITE}/privacy/", git_date("tools/site.py") or today))
     rows = "".join(f"<url><loc>{u}</loc><lastmod>{min(d, today)}</lastmod></url>\n" for u, d in urls)
     return ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
@@ -565,7 +574,7 @@ café table). German: KI-Stammtisch in Wien.
 
 ## Links
 
-- [Website]({SITE}/): editions, slides, calendar files
+- [Website]({SITE}/): editions and their slides
 - [Source code and slides on GitHub]({REPO}): present at a future edition by opening a pull request
 - [Discord]({L["discord"]}): community
 - [Telos Circle]({TELOS["website"]}), [LinkedIn]({TELOS["linkedin"]}), [Instagram]({TELOS["instagram"]}), [X]({TELOS["x"]})
@@ -675,7 +684,6 @@ def main():
     for ed in eds:
         d = OUT / ed["slug"]
         d.mkdir()
-        (d / f'waiss-{ed["slug"]}.ics').write_text(ics(ed), encoding="utf-8", newline="")
         if ed["slides"]:
             deck_html = (ROOT / "build" / ed["deck"] / "index.html").read_text(encoding="utf-8")
             if (ROOT / "build" / ed["deck"] / "media").exists():  # videos the deck fetches on click
@@ -731,9 +739,18 @@ def main():
         (OUT / "master" / "index.html").write_text(deck_page(master.read_text(encoding="utf-8"), master=True),
                                                   encoding="utf-8")
 
-    body = hero() + format_(eds, today) + editions(eds, today) + slides(eds) + contribute(eds)
+    body = hero() + editions(eds, today) + format_(eds, today) + slides(eds) + contribute(eds)
     (OUT / "index.html").write_text(page(f"{NAME} | AI meetup in Vienna", DESC, body, eds, ld=site_ld(eds)),
                                     encoding="utf-8")
+    for e in eds:  # one page per edition with all its slides
+        if has_slides(e):
+            d = OUT / "editions" / e["slug"]
+            d.mkdir(parents=True)
+            (d / "index.html").write_text(page(
+                f'WAISS {e["edition"]} – {e["start"]:%d %b %Y} – Slides',
+                f'All slides of WAISS {e["edition"]} (Wiener AI Software Stammtisch), {e["start"].day} {e["start"]:%B %Y}, '
+                f'{e["ort_lang"]}, Vienna: AI recap, show & tell, open round.',
+                edition_page(e), eds, "../../", f'{SITE}/editions/{e["slug"]}/'), encoding="utf-8")
     (OUT / "privacy").mkdir()
     (OUT / "privacy" / "index.html").write_text(
         page("Privacy – WAISS", "Privacy policy of waiss.teloscircle.com: no cookies, no analytics, no tracking.",

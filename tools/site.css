@@ -70,30 +70,33 @@ code,kbd{font-family:var(--mono);font-size:.86em;background:rgba(252,251,248,.8)
 .agenda .m{text-align:right;font-family:var(--mono);font-size:15px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
 @media (max-width:820px){.agenda li{grid-template-columns:56px 1fr}.agenda .w,.agenda .m{grid-column:2;text-align:left}}
 
-/* editions: one row of cards, oldest on the left */
-.eds{list-style:none;margin:0;padding:6px 6px 18px;display:flex;gap:22px;overflow-x:auto;scroll-snap-type:x proximity;
-  scrollbar-width:thin}
-.ed{flex:0 0 min(300px,78%);scroll-snap-align:start;background:rgba(252,251,248,.78);border-radius:24px;
-  box-shadow:0 0 0 1.5px var(--line);padding:22px 24px;display:flex;flex-direction:column;gap:6px}
-.ed[data-state=today],.ed[data-state=upcoming]{box-shadow:0 0 0 2px var(--ink);background:var(--tile)}
-.ed.tba{background:transparent;box-shadow:none;outline:2px dashed var(--line);outline-offset:-2px}
-.ed-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
-.num{height:44px;width:auto;color:var(--ink);overflow:visible}
+/* editions: one big row per edition, the number on the far left, newest on top */
+.eds{list-style:none;margin:0;padding:0;border-bottom:2px solid var(--ink)}
+.ed{display:grid;grid-template-columns:clamp(110px,14vw,190px) minmax(0,1fr) auto;grid-template-areas:"num when st" "num links links";
+  gap:10px clamp(20px,3vw,44px);align-items:center;border-top:2px solid var(--ink);padding:clamp(24px,3vw,40px) 0}
+.ed .num{grid-area:num;height:clamp(56px,7vw,96px);width:auto;color:var(--ink);overflow:visible;align-self:start}
+.ed-when{grid-area:when}
+.ed-date{font-size:clamp(26px,3.2vw,44px);font-weight:700;letter-spacing:-.015em;line-height:1.1}
+.ed-place{font-size:clamp(17px,1.6vw,21px);color:var(--muted);margin-top:6px}
+.ed .st{grid-area:st;align-self:start}
+.ed-links{grid-area:links;display:flex;flex-wrap:wrap;gap:8px 26px;font-size:clamp(17px,1.6vw,20px)}
 .ed[data-state=past] .num,.ed.tba .num{color:#A9A59C}
+.ed[data-state=past] .ed-date{color:#55524B}
+.ed.tba .ed-date{color:var(--muted)}
 .st{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);
-  border-radius:999px;padding:3px 10px}
+  border-radius:999px;padding:4px 11px;white-space:nowrap}
 .ed[data-state=today] .st{background:var(--ink);color:var(--tile);border-color:var(--ink)}
-.ed-date{font-size:22px;font-weight:700;letter-spacing:-.01em}
-.ed-place{font-size:16px;color:var(--muted);line-height:1.4}
-.ed-links{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:auto;padding-top:16px;font-size:16px}
+.ed[data-state=upcoming] .st{border-color:var(--ink);color:var(--ink)}
+@media (max-width:640px){
+  .ed{grid-template-columns:1fr auto;grid-template-areas:"num st" "when when" "links links"}
+}
+/* an edition's own page */
+.edition .ed-h{margin:26px 0 22px}
+.big-num{height:clamp(90px,13vw,170px);width:auto;display:block}
+.edition .ed-date{font-size:clamp(28px,3.6vw,48px)}
+.edition .panel{margin-top:56px}
 
 /* slides: edition tabs, parts as rows of 16:9 thumbnails (a light table) */
-.tabs{display:flex;flex-wrap:wrap;gap:10px;margin:40px 0 8px}
-.tabs button{font:500 15px var(--mono);letter-spacing:.06em;padding:10px 18px;border-radius:999px;border:2px solid var(--ink);
-  background:rgba(252,251,248,.7);color:var(--ink);cursor:pointer}
-.tabs button[aria-selected=true]{background:var(--ink);color:var(--tile)}
-html:not(.js) .panel[data-off]{display:block!important}
-html:not(.js) .tabs{display:none}
 .panel{margin-top:28px}
 .panel-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px 32px;padding-bottom:8px}
 .panel-head .btns{margin:0}

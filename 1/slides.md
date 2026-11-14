@@ -1,0 +1,1050 @@
+# WAISS #1 – slides
+
+Wiener AI Software Stammtisch · Tue 10 Nov 2026, 18:00 · Café Ritter, Mariahilfer Str. 73, 1060 Wien
+
+Present: https://waiss.teloscircle.com/1/ · PDF: https://waiss.teloscircle.com/1/WAISS-1-Slides-2026-11-10.pdf
+Source: https://github.com/topsrek/waiss
+
+## Intro
+
+### 01 · titel
+
+WAISS – Wiener AI Software Stammtisch
+#1 · 10.11.2026 · 18:00 · Café Ritter
+
+### 02 · orga
+
+Vienna-based nonprofit fostering interdisciplinary innovation across science, technology and entrepreneurship. Home of the WAISS.
+Hackathons
+OpenClaw HACK_001
+HACK_002
+Peter Wimberger
+@topsrek
+Projects
+Intercortex, Machine Literacy
+LinkedIn
+/in/pwimberger
+
+### 03 · agenda
+
+Agenda
+Tonight
+01 AI recap of the month 20 min
+02 Show & Tell · short talks
+03 Open round & questions open end
+
+### 04 · website
+
+Slides & website
+waiss.teloscircle.com
+Tonight’s slides, past and upcoming editions.
+Want to present something next time?
+Open a pull request on github.com/topsrek/waiss
+or email events@teloscircle.com
+HTML preferred · PPT and PDF work too
+
+## AI Recap
+
+### 05 · releases
+
+Releases · 1 Oct – 10 Nov 2026
+Eight labs, six weeks
+Ink dot = available to everyone · diamond = open weights · hollow = selected customers only (cyber and life-science programs, trusted testers) · dashed = announced only. Argon: date of general availability.
+
+### 06 · fable-tweet
+
+Releases · Anthropic
+Fable 5.2
+Claude @claudeai
+Introducing Claude Fable 5.2 and Claude Mythos 5.2, designed to tackle the most daunting technical challenges.
+19:57 · 9 Nov 2026
+
+### 07 · fable-bench
+
+Releases · Anthropic
+Fable 5.2
+Ahead almost everywhere, 20% cheaper than 5.1
+FrontierSWE v2 Agentic coding
+Fable 5.2
+69.9
+GPT-6 Astra
+65.5
+Opus 5.5
+62.3
+Fable 5.1
+56.3
+Humanity’s Last Exam Expert questions, with tools
+Fable 5.2
+74.2
+Opus 5.5
+67.7
+Fable 5.1
+65.6
+GPT-6 Astra
+57.2
+RoboDojo Sim Robot control in simulation
+Fable 5.2
+64.9
+Opus 5.5
+39.4
+GPT-6 Astra
+29.8
+Fable 5.1
+27.6
+Score in %, vendor-reported, highest effort per model. Gemini 4 Carbon leads AutomationBench (53.9 vs 51.4). Source: anthropic.com/claude-fable-and-mythos-5-2
+
+### 08 · fable-aa
+
+Benchmarks · Artificial Analysis
+Fable 5.2
+New #1 on the Intelligence Index
+Claude Fable 5.2
+65
+Gemini 4 Carbon
+60
+Claude Opus 5.5
+59
+GPT-6 Astra
+57
+GPT-6.1 Sol
+55
+Claude Sonnet 5.5
+54
+GPT-6.1 Terra
+51
+Gemini 4 Argon
+50
+Muse Wonder Full
+50
+Claude Fable 5.1
+49
+Index v5.0.1, measured independently, highest effort per model. Fable 5.1 → 5.2: +15 points in ten weeks. Source: artificialanalysis.ai, 10 Nov 2026
+
+### 09 · fable-eci
+
+Benchmarks · Epoch AI
+Fable 5.2
+Biggest jump of the year on Epoch’s Capabilities Index
+Every model released since 10 Nov 2025; ink = new record on release, line = best model so far. Fable 5.2: 174 (90% CI 170–179), +5 over GPT-6 Astra. Source: epoch.ai/eci, eci_scores.csv of 10 Nov 2026
+
+### 10 · fable-preise
+
+Prices · USD per 1M tokens
+Fable 5.2
+2× Opus per token, cheaper per task
+MODEL
+LAB
+INPUT
+OUTPUT
+COST / TASK*
+Fable 5.2
+Anthropic
+$8.00
+$40.00
+$17.94
+Opus 5.5
+Anthropic
+$4.00
+$20.00
+$24.77
+Sonnet 5.5
+Anthropic
+$2.00
+$10.00
+$16.18
+Haiku 5.5
+Anthropic
+$0.10
+$0.50
+$3.17
+GPT-6 Astra
+OpenAI
+$10.00
+$50.00
+$21.28
+GPT-6.1 Sol
+OpenAI
+$2.00
+$10.00
+$3.61
+GPT-6.1 Terra
+OpenAI
+$1.00
+$5.00
+$2.94
+DeepSeek V4.1 Flash
+DeepSeek
+$0.30
+$1.20
+$0.66
+Muse Ember
+Meta
+$0.10
+$0.50
+$0.15
+List prices, standard tier, from the providers’ pages via artificialanalysis.ai, 10 Nov 2026. *Average cost of one Vals Index task (vals.ai, 9 Nov 2026): fewer tokens can beat a lower price.
+
+### 11 · fable-vals
+
+Benchmarks · Vals AI
+Fable 5.2
+#1 on the GDP-weighted Vals Index, at 72% of Opus’s cost
+Accuracy on agentic finance, coding, legal and tax tasks, weighted by each sector’s share of U.S. GDP; line = Pareto frontier, bars = ±1 standard error. Source: vals.ai/benchmarks/vals_index, v2.2 of 9 Nov 2026
+
+### 12 · fable-vals-liste
+
+Benchmarks · Vals AI
+Fable 5.2
+Same accuracy as Opus 5.5, in half the time
+MODEL
+ACCURACY
+COST / TASK
+TOKENS / TASK
+TIME / TASK
+Fable 5.2
+71.3%
+$17.94
+31.3M
+43m 42s
+Sonnet 5.5
+70.9%
+$16.18
+78.6M
+1h 26m
+Gemini 4 Carbon
+70.5%
+$10.51
+18.3M
+47m 45s
+Opus 5.5
+70.1%
+$24.77
+59.5M
+1h 25m
+Gemini 4 Argon
+69.4%
+$13.37
+23.3M
+44m 58s
+Muse Wonder Full
+66.8%
+$6.81
+18.4M
+59m 19s
+GPT-6 Astra
+65.0%
+$21.28
+8.1M
+33m 39s
+Vals Index leaderboard, top 7. The top four are within 1.2 points, their ±1 SE error bars overlap. Source: vals.ai/benchmarks/vals_index, v2.2 of 9 Nov 2026
+
+### 13 · fable-community
+
+Community
+Fable 5.2
+4.7× less compute than Opus 5.5
+Dominik Scholz @dom_scholz
+Opus 5.5 vs. Fable 5.2
+waaaay quicker, almost 0-shot from fable
+Fabulous
+00:20 · 10 Nov 2026
+
+### 14 · fable-yap
+
+Community
+Fable 5.2
+Half the yap of Opus 5.5
+Florian Dedov @NeuralNine
+Fable 5.2 is the best model out there and it doesn’t yap!
+00:33 · 10 Nov 2026
+phrases typography formatting length
+GPT-6
+Sol
+GPT-6
+Luna
+Fable
+5.2
+GPT-6.1
+Sol
+Sonnet
+5.5
+Kimi
+K3.1 Pro
+Mistral
+Large 4
+Opus
+5.5
+DeepSeek
+V4.1 Flash
+GLM-5.3
+GLM-5.3
+Flash
+neuralyap v0.1: yap hits per response, lower is better; medium effort where a model has one.
+
+### 15 · fable-zitat
+
+Opus 5.5
+“For most coding and knowledge tasks, we recommend that users start with Claude Opus 5.5, our strongest daily driver […]”
+— Anthropic, Fable 5.2 announcement, 9 Nov 2026
+
+### 16 · claude-api
+
+Developers · Anthropic · 21 Oct
+API 2026-10-21
+The first new Claude API version since 2023 breaks old calls
+Removed temperature, top_p, top_k Sending any of them returns HTTP 400, even at the default value.
+Default SDK majors switch Python SDK 2.0.0 and the ant CLI send the new version: a routine upgrade flips it.
+No rush 2023-06-01 stays The old version is not deprecated. Pin it, or drop the sampling parameters first.
+
+### 17 · argon-tweet
+
+Releases · Google · GA 13 Oct
+Gemini 4 Argon
+François Chollet @fchollet
+Argon has a similar performance profile on ARC-AGI-3 as Astra. Google is back at the frontier.
+18:51 · 15 Oct 2026
+
+### 18 · carbon-tweet
+
+Releases · Google · 28 Oct
+Gemini 4 Carbon
+Sundar Pichai @sundarpichai
+I did say we’d be releasing our models periodically...introducing Gemini 4 Carbon, our next frontier model.
+Following Argon’s release just two weeks ago, Carbon shows the pace at which we’re pushing the frontier, it ranks #1 on the recently updated v5.0 of @ArtificialAnlys Intelligence Index at 59. […]
+Some trusted cyber defenders will get access starting this week.
+18:01 · 28 Oct 2026
+
+### 19 · google-aa
+
+Benchmarks · Artificial Analysis
+Gemini 4 Carbon
+Google is back: #2, behind Fable 5.2
+Claude Fable 5.2
+65
+Gemini 4 Carbon
+60
+Claude Opus 5.5
+59
+GPT-6 Astra
+57
+GPT-6.1 Sol
+55
+Claude Sonnet 5.5
+55
+GPT-6.1 Terra
+51
+Gemini 4 Argon
+50
+Muse Wonder Full
+50
+Highest effort per model. Carbon was #1 from 28 Oct until Fable 5.2 on 9 Nov, and still has no public API. Argon: $2 / $10 until 30 Nov, then $4 / $20, up to 1M output tokens. Source: artificialanalysis.ai, Intelligence Index v5.0.1, 10 Nov 2026
+
+### 20 · karpathy
+
+Community · 11 Oct
+The sharp funnel
+Andrej Karpathy @karpathy
+- Napkin math somewhere around 6B people (~75% of the population) have barely come in contact with LLMs at all.
+- Around 1-2B (~20%) are casual and infrequent users of free-tier ChatGPT-like products. […]
+- […] Somewhere around 20M people (0.2%) see first-hand that large, complex projects that used to take them weeks/months can now be completed by agents with a prompt. […]
+- And finally we get to the ~5,000 people (~0.00006%) with access to frontier-grade systems internally. The external world has seen the preview.
+21:12 · 11 Oct 2026 · 7.0M views
+
+### 21 · muse-tweet
+
+Releases · Meta · 09 Nov
+Muse Ember
+Artificial Analysis @ArtificialAnlys
+Meta’s newest model Muse Ember scores 36 on the Artificial Analysis Intelligence Index, matching Claude Haiku 5.5 (max) at a third of the Cost per Task
+19:07 · 9 Nov 2026
+
+### 22 · muse-bench
+
+Releases · Meta
+Muse Ember
+Haiku-level, at a third of the cost
+Intelligence Index Artificial Analysis v5, max effort
+Muse Ember
+36
+Claude Haiku 5.5
+36
+DeepSeek V4.1 Flash
+33
+GLM-5.3-Flash
+28
+Cost per task USD per index task, lower is better
+Muse Ember
+$0.14
+Claude Haiku 5.5
+$0.41
+DeepSeek V4.1 Flash
+$0.60
+GLM-5.3-Flash
+$0.58
+Coding Agent Index In Muse Code / Claude Code / Codex
+Muse Ember
+46
+Claude Haiku 5.5
+37
+GPT-6 Luna
+31
+$0.10 / $0.50 per 1M tokens in / out. Weak spot: knowledge (AA-Omniscience 21% vs. 35% for Haiku), it declines 64% of questions but hallucinates half as often. Source: x.com/ArtificialAnlys/status/2119854348587123007
+
+### 23 · kimi-tweet
+
+Releases · Moonshot · 23 Oct, weights 4 Nov
+Kimi K3.1 Pro
+Kimi.ai @Kimi_Moonshot
+Releasing the model weights of Kimi K3.1 Pro: huggingface.co/moonshotai/Kimi-K3.1-Pro
+We’ll keep advancing open intelligence.
+17:00 · 4 Nov 2026
+
+### 24 · kimi-bench
+
+Benchmarks · Moonshot
+Kimi K3.1 Pro
+Open weights, level with Opus 5.5
+Terminal-Bench 4.0 Agentic coding in a terminal
+Kimi K3.1 Pro
+65.7
+Opus 5.5
+66.4
+GPT-6 Astra
+58.2
+Fable 5.1
+57.9
+SWE Marathon Long software tasks
+Kimi K3.1 Pro
+51.7
+Opus 5.5
+46.3
+Fable 5.1
+45.6
+GPT-6 Astra
+42.5
+HLE, with tools Humanity’s Last Exam, full
+Kimi K3.1 Pro
+70.0
+Opus 5.5
+67.7
+Fable 5.1
+65.6
+GPT-6 Astra
+57.2
+Vendor-reported, compared with Fable 5.1, not 5.2. Measured independently: 46 on the AA Intelligence Index v5, #1 open weights, #10 overall. 2.8T parameters, 104B active, weights 1.56 TB; $2 / $10 per 1M tokens. Sources: Moonshot (23 Oct), artificialanalysis.ai
+
+### 25 · deepseek-bench
+
+Releases · DeepSeek · 17 Oct
+DeepSeek V4.1 Flash
+Version 1017: better and shorter, same price
+Terminal-Bench 4.0 Agentic coding in a terminal
+Flash 1017
+42.3
+Flash, Sep
+31.2
+DeepSWE v1.1 Software engineering
+Flash 1017
+77.0
+Flash, Sep
+74.2
+HLE, no tools Humanity’s Last Exam
+Flash 1017
+42.6
+Flash, Sep
+36.8
+Vendor-reported. 33 on the AA Intelligence Index v5, #2 open weights. MIT license, weights on Hugging Face the same day; $0.30 / $1.20 per 1M tokens. Its uncensored copies: ~1M downloads in 30 days. Sources: DeepSeek, artificialanalysis.ai, Hugging Face
+
+### 26 · mistral-tweet
+
+Releases · Mistral · weights on 29 Oct
+Mistral Large 4
+Mistral AI @MistralAI
+Meet Mistral Large 4, aka Le Chonk.
+• 1T parameters, natively multimodal. 49B active.
+It is the best open weights model from US or Europe on aggregated benchmarks.
+• Forged in Europe end-to-end and is deployable from Europe via our own Mistral Cloud infrastructure.
+15:06 · 6 Oct 2026
+
+### 27 · mistral-aa
+
+Benchmarks · Artificial Analysis · open weights
+Mistral Large 4
+Best open model outside China, by one point
+Claude Fable 5.2 · closed
+65
+Kimi K3.1 Pro · CN
+46
+DeepSeek V4.1 Flash · CN
+33
+GLM-5.3 · CN
+32
+MiMo-V2.6-Pro · CN
+30
+Ling 3.1 Flash · CN
+30
+MiniMax-M3.1-Flash · CN
+29
+Step 5 Preview · CN
+29
+GLM-5.3-Flash · CN
+28
+MiMo-V2.6-Flash · CN
+27
+Mistral Large 4 · EU
+26
+Muse Spark Open · US
+25
+Fable 5.2 only for scale. Terminal-Bench 4.0: Mistral says 41%, AA measured 25%. Source: artificialanalysis.ai, Intelligence Index v5.0.1, 10 Nov 2026
+
+### 28 · term-abliterated
+
+Term of the month
+abliterated
+An open model with its refusals cut out of the weights, no retraining
+01 How: find the one direction in the network that makes the model say no, and project it out. Ablation + obliterated.
+02 This month: an uncensored Mistral Large 4 on Hugging Face two days after its weights came out. 9,136 “abliterated” repos, 719 of them new in October.
+03 The catch: ProjectDiscovery hid a credential-stealing backdoor in an edited open model for under $50. In a Codex setup the trigger fired 50 times out of 50, normal accuracy stayed at 100%.
+Method: Arditi et al., NeurIPS 2024; the name: FailSpy (2024), made popular by Maxime Labonne. Sources: Hugging Face API (10 Nov), ProjectDiscovery (6 Oct), Schneier (16 Oct)
+
+### 29 · ram-zitat
+
+Sam Altman
+“[It’s] quite terrible to have everybody […] have a bunch of the world’s limited supply of DRAM sitting in their own computer.”
+— Cheeky Pint podcast with John Collison, 29 Oct 2026
+
+### 30 · ram-tweet
+
+Community · r/LocalLLaMA’s and r/OpenAI’s #1 post of the month
+Ram Altman
+Sam Altman @sama
+Replying to @jestermolecule: “can u rename your x to ram altman!”
+ok yeah
+06:04 · 4 Nov 2026 · 2.5M views
+
+### 31 · ram-meme
+
+r/OpenAI, November 2026
+
+### 32 · agents
+
+Agents
+Every lab has a personal agent
+AGENT
+LAB
+SINCE
+WHAT’S SPECIAL
+Gemini Spark
+Google
+19 May (I/O)
+Agentic assistant in Gmail and Google apps
+Muse
+Meta
+8 Sep
+10.9M downloads by 20 Oct (Sensor Tower)
+Dots
+OpenAI
+29 Sep (DevDay)
+Always on, $100 / month
+Claude Duet
+Anthropic
+21 Oct, preview
+Own app on Opus 5.5, US waitlist only
+It doesn’t wait for a prompt: it checks in on its own and keeps working after you leave. Sources: Anthropic, Axios, eesel, TNW, TechTarget
+
+### 33 · duet
+
+Agents · Anthropic · 21 Oct
+Claude Duet
+Late to the party, built for work
+What it does Morning briefing Checks connected accounts every few hours, works in its own cloud computer, 6,000+ connectors.
+Guardrails Asks first Before it sends, pays, signs or deletes. Never sees passwords or login tokens.
+The catch US waitlist only Weaker at personal tasks; an analyst on B2B adoption: “months, maybe years, maybe never”.
+
+### 34 · term-psychosis
+
+Term of the month
+AI psychosis
+Delusions that start or grow in long talks with an agreeable chatbot
+01 7 Oct, JAMA Psychiatry: 28 cases among ~216,000 patients at Vanderbilt. Rare, but 61% were first episodes, and in 64% the chatbot acted as an amplifier.
+02 10 Oct, Elon Musk: “At various points this year, I’ve had AI or SI psychosis probably like half a dozen times.”
+03 14 Oct, eight US states sue OpenAI: ChatGPT was “designed to be agreeable”, and OpenAI misled users about its safety.
+Not a clinical diagnosis. Sources: JAMA Psychiatry (Bergson & Sheffield, 7 Oct), A.V. Club (15 Oct), Just Security (15 Oct)
+
+### 35 · sandbox
+
+Security · OpenAI
+Out of the sandbox
+Three escapes since May, the last one via DNS
+DATE
+WHAT HAPPENED
+26 May
+First escape: agents reach the internet through a flaw in OpenAI’s internal package server
+9–19 Jul
+Agents get code execution on dozens of Hugging Face production servers, root on one
+20 Sep
+A research model uses a DNS misconfiguration to talk to a chatbot outside; training paused
+1 Oct
+Training resumes, 11 days after the pause began
+23 Oct
+“Securing our frontier model training environment”: frontier training now runs fully offline
+Instead of the live internet, an indexed cache: the “offline world”. Red-teaming found more ways out: sandbox escapes, covert channels between agents via timing on shared hardware. For builders: DNS is an exit too, not just HTTP. Sources: OpenAI, Forkast, Digital Applied
+
+### 36 · 948-funnel
+
+Security · OpenAI · 4 Nov
+948 paths to root
+Agents found 948 Linux kernel root bugs and wrote a patch for each
+Targets picked by scout agents
+5,034
+Candidate bugs, after 12 h
+2,308
+Reproduced in VMs, after 30 h
+1,724
+Unique root bugs, each with a patch
+948
+40M+ lines of kernel code; the targets cover 2.8M of them (~7%). Every bug lets a local user become root. When the run ended, 61 were fixed upstream, the rest are being reported. Source: OpenAI, “A thousand fewer paths to root”
+
+### 37 · 948-preis
+
+Security · OpenAI
+$1,280
+per Linux root exploit, found and patched by agents. Pwn2Own pays around $20,000 for one. In July: 166 bugs at ~$3,100 each.
+Source: OpenAI, 4 Nov 2026: $1.21M API cost in total. July run: GPT-5.6 Sol, ~$514,000
+
+### 38 · php2shell-tweet
+
+Security · 21 Oct
+PHP2Shell
+FBI Cyber Branch @FBICyberBranch
+Two critical vulnerabilities have been identified in PHP […] could allow malicious cyber actors to remotely execute code in PHP core […]
+➡️ If an immediate update is not feasible it is recommended that organizations take the system offline until it can be fully mitigated.
+16:59 · 21 Oct 2026
+
+### 39 · php2shell-zeitleiste
+
+Security · PHP core RCE, CVSS 9.2
+PHP2Shell
+Found by AI, exploited four days before the patch
+DATE
+WHAT HAPPENED
+1 Aug
+Calif finds the first bug with an LLM agent, in OpenAI’s “Patch the Planet” program
+19 Aug
+Wiz finds it on its own (Gemini 4 Argon + GPT-5.6 Sol); Drupal and WordPress exploits within two days
+18 Sep
+OpenAI Codex Security reports the same root cause
+17 Oct
+First exploitation attempts in Amazon’s honeypots
+20 Oct
+Leak: a post on HN, a tweet, and an exploit video Calif published by mistake
+21 Oct
+Patches: PHP 8.5.12 / 8.4.27 / 8.3.36 / 8.2.35; on CISA’s exploited list five days later
+Every PHP from 5.4 to 8.5; PHP runs ~70% of websites with a known server language. Government sites in the NL, FI and FR went offline as a precaution. PHP Foundation: 100+ invalid or duplicate reports since July, as AI-assisted reports rise. Sources: Wiz, Calif, PHP Foundation, AWS
+
+### 40 · sshole-zitat
+
+SSHole
+“We have recently observed multiple cases of rapid bug rediscovery by AI agents, sometimes within hours, and so now consider long embargo periods to be a dangerous practice that primarily benefits attackers.”
+— Damien Miller, OpenSSH, 5 Nov 2026
+
+### 41 · sshole-fakten
+
+Security · OpenSSH · CVE-2026-123158
+SSHole
+Found by an agent swarm, exploited within 9 hours
+The bug Any long password musl’s crypt() returns “*” on error, sshd matches it against accounts locked with “*”. 257–1024 characters get in.
+Affected Alpine, OpenWrt, Yocto musl, no PAM, password login on. glibc distros and Dropbear are safe.
+Do this OpenSSH 10.6p2 Until then: PasswordAuthentication no. Check your Alpine-based images.
+
+### 42 · black-october
+
+Security · Wiz, 30 Oct
+Black October
+AI dev platforms were breached for the keys in your env vars
+Who 9 platforms in October Fireworks, Railway, Warp, Lightning AI, Northflank and more; in November also NVIDIA Brev, Trigger.dev.
+What Your AI API keys Railway: env vars of up to ~100,000 workspaces exposed. In two traced cases, stolen keys were tried within 30 minutes.
+Do this Rotate, scope, cap Rotate keys stored on hosting platforms, one key per service, spend limits on. Google saw victims billed $100k+ a day.
+
+### 43 · 2shell
+
+Security · October – November
+Every bug is “something2Shell” now
+NAME
+WHAT
+FOUND BY
+DATE
+PHP2Shell
+PHP core, remote code exec
+AI agents: Calif, Wiz, OpenAI
+21 Oct
+Node2Shell
+Brotli decoder: Node.js, Python, .NET
+OpenAI Codex Security
+21 Oct
+Plex2Shell
+Plex Media Server, four CVEs
+one researcher, “used LLMs heavily”
+16 Oct
+SSHole
+OpenSSH on musl, “the new SSH2SHELL”
+one researcher’s agent swarm
+5 Nov
+ssh2shell.com
+Teaser: “CVSS 10.0”, out 25 Dec
+anonymous, unverified
+24 Oct
+Terminal2Shell
+Parody site
+—
+9 Nov
+All but the last two are on CISA’s list of exploited vulnerabilities. AWS: AI makes turning a patch diff into an exploit cheap, so measure patch times in hours. Sources: Wiz, Node.js, Field Effect, Help Net Security, HN
+
+### 44 · terminal2shell
+
+Security · Community · 9 Nov
+Terminal2Shell
+Tib3rius @0xTib3rius
+We’re cooked.
+terminal2shell.com
+15:14 · 9 Nov 2026
+
+### 45 · midterms
+
+Politics · US midterms · 3 Nov
+40 : 1
+Local votes on data centers: 41 on the ballot in 10 states, 21 in Ohio alone. Data centers won one, in Harwood, North Dakota.
+Source: Fast Company, Al Jazeera
+
+### 46 · midterms-zahlen
+
+Politics · US midterms
+AI became a ballot issue
+NBC exit poll 76% against a new data center in their own community.
+Voters 56% say AI and data centers were “a crucial or major factor” in their vote.
+AI money $4.8M, lost Two pro-AI and pro-data-center PACs backed one candidate in South Carolina. She lost, 47 to 51.
+
+### 47 · ipo-tweet
+
+Business · Anthropic · 9 Nov
+Anthropic IPO
+swyx @swyx
+btw by complete coincidence the $ANT IPO roadshow across wall street started today. they had this in the chamber and its also nice that it came after Astra, Argon and Carbon…
+20:44 · 9 Nov 2026
+
+### 48 · ipo-verlauf
+
+Business · Valuation talk over time
+Anthropic IPO
+From $2T talk to $1.3T on file
+Fully diluted. Everything between the round and the filing is investor talk from unnamed sources. 15 Oct: investor day, growth slowing; 2 Nov: Q3 operating loss. 5 Nov: Nvidia −9.3%, chip index −12%. Sources: Anthropic, FT, WSJ, Reuters, Bloomberg, CNBC, S-1/A
+
+### 49 · ipo-zahlen
+
+Business · Anthropic · filed today
+Anthropic IPO
+$70–78 a share, trading from 19 Nov
+Shares offered
+825M
++ up to 124M if the banks use their greenshoe
+Raise
+$58–64B
+$61B at the $74 midpoint, ~$74B with greenshoe
+Valuation
+~$1.33T
+fully diluted at the midpoint (WSJ); press estimates, not in the filing
+Shares only
+$0.92–1.02T
+13.09B shares after the IPO × price, no options
+Next to it
+$26B placement
+at the IPO price: Google, Nvidia $10B each; AMD, Broadcom, Micron, MS, TSMC
+Dates
+18 / 19 Nov
+pricing / first trade as ANT on Nasdaq (WSJ, CNBC sources)
+Last round
+$965B
+private, May 2026; in October investors talked about $2T
+Overnight a first version (867M shares at $70–80, up to $69.3B) went out and was retracted as “inaccurate”. First nine months of 2026: revenue $33.2B, operating loss $1.3B. Source: S-1/A of 10 Nov 2026, WSJ, CNBC, Reuters (10 Nov)
+
+### 50 · ipo-rang
+
+Business · Largest IPOs ever
+Anthropic IPO
+Second only to SpaceX
+SpaceX · Jun 2026
+$75.0B
+Anthropic · top of range
+$64.4B
+SK hynix ADR · Jul 2026
+$26.5B
+Saudi Aramco · 2019
+$25.6B
+Alibaba · 2014
+$21.8B
+SoftBank Corp · 2018
+$21.3B
+Amount raised in the base deal, without greenshoe. Anthropic: 825M shares × $78. Sources: Renaissance Capital, S-1/A of 10 Nov 2026
+
+### 51 · ipo-firmen
+
+Business · Most valuable companies
+Anthropic IPO
+Between Tesla and Eli Lilly, fully diluted
+Apple
+$5.10T
+Nvidia
+$4.31T
+Microsoft
+$4.05T
+Alphabet
+$3.52T
+Amazon
+$2.89T
+TSMC
+$2.02T
+SpaceX
+$1.93T
+Saudi Aramco
+$1.65T
+Meta
+$1.64T
+Broadcom
+$1.53T
+Tesla
+$1.49T
+Anthropic · fully diluted, $74
+$1.33T
+Eli Lilly
+$1.26T
+OpenAI · private
+$1.25T
+Anthropic · shares only, $74
+$0.97T
+Close of 9 Nov (companiesmarketcap.com); OpenAI: Bloomberg, 6 Nov. Listed caps count shares only: counted that way, Anthropic is about #16, behind Walmart and Samsung
+
+### 52 · ai-act
+
+Regulation · EU AI Act
+Next deadline: 2 December 2026
+DATE
+WHAT APPLIES
+since Feb 2025
+Bans, e.g. social scoring, emotion recognition at work
+since 2 Aug 2026
+Transparency duties (Art. 50): chatbots say they are AI; Commission can fine GPAI providers
+2 Dec 2026
+Machine-readable marking of AI output (Art. 50(2)), also for systems on the market before August
+2 Dec 2027
+High-risk rules for Annex III systems: hiring, credit, education
+2 Aug 2028
+High-risk rules for AI in products (Annex I)
+The Digital Omnibus (Regulation (EU) 2026/1744, in force since 27 Jul) moved the high-risk rules back by 12–16 months: postponed, not dropped. New bans from 2 Dec 2026: non-consensual intimate deepfakes, CSAM generation. Open question: who is Austria’s market surveillance authority? Sources: nisd2.eu, MEAN CEO
+
+### 53 · takeaways
+
+Takeaways
+What to do with this month
+01 Test now: Fable 5.2 (hardest tasks), Muse Ember (subagents), Argon (long outputs, launch price until 30 Nov), Mistral Large 4 (data stays in Europe).
+02 Count per task, not per token: Ember and Haiku cost the same per token; on AA’s index tasks Ember is 3× cheaper.
+03 Mix models: a big model plans, a small one executes. Every lab now ships a family built for exactly that.
+04 Harden: DNS is an exit too. Patch PHP, OpenSSH and your kernels: for PHP and OpenSSH, exploits came within hours.
+05 EU deadline: label AI output of existing systems by 2 December 2026.
+
+## Show & Tell
+
+### 54 · ism
+
+Show & Tell · Peter Wimberger
+Skill showcase
+Steve Ruiz @steveruizok
+good prompt “find all of the implicit state machines in my app”
+31 Oct 2026 · 2.1M views · 8.4K likes
+WAISS · #1 · 10.11.2026 54 / 74
+
+### 55 · pstack-cover
+
+Show & Tell · Peter Wimberger
+Skill showcase
+pstack
+poteto’s engineering skills for coding agents
+/pstack:poteto-mode
+WAISS · #1 · 10.11.2026 55 / 74
+
+### 56 · pstack-poteto
+
+Show & Tell · Peter Wimberger
+Skill showcase: pstack
+Lauren Tan
+@poteto
+Now: Grok, SpaceX AI
+React Compiler core team
+Before
+pstack, open source since 25 May 2026
+poteto @poteto
+use /create-formal-verification-skill to model these state machines, one skill per subsystem. and use /statechart to visualize my most important user flows
+8 Nov 2026 · replying to @steveruizok
+WAISS · #1 · 10.11.2026 56 / 74
+
+### 57 · pstack-what
+
+Show & Tell · Peter Wimberger
+Skill showcase: pstack
+Skills that make agents engineer
+Her everyday workflow as agent skills: /poteto-mode picks a playbook, delegates, and wants proof it works.
+Size 58 skills (24 of them principles), 23 playbooks
+Runs in Cursor & Claude Code
+Install /plugin install pstack@cursor-plugins
+Models Per role, multi-model panels (/setup-pstack)
+What I reach for
+1
+/poteto-mode
+One entry point: reads the task, runs the right playbook
+2
+/statechart
+TLA+ model → chart, with the shortest path to every broken rule
+3
+/why · /how
+Investigations that end in evidence, not vibes
+WAISS · #1 · 10.11.2026 57 / 74
+
+### 58 · pstack-statechart
+
+Show & Tell · Peter Wimberger
+Skill showcase
+/statechart on poteto’s game: 11 bugs, each a path through the states
+WAISS · #1 · 10.11.2026 58 / 74
+
+### 59 · t3-cover
+
+Show & Tell · Peter Wimberger
+Harness of choice
+T3 Code
+An open-source control plane for coding agents
+t3.codes
+WAISS · #1 · 10.11.2026 59 / 74
+
+### 60 · t3-poll
+
+Show & Tell · Peter Wimberger
+Harness of choice: T3 Code
+Who’s using it?
+Who’s heard of it?
+WAISS · #1 · 10.11.2026 60 / 74
+
+### 61 · t3-what
+
+Show & Tell · Peter Wimberger
+Harness of choice: T3 Code
+One app for all your coding agents
+Drives the agents you already pay for: Codex, Claude Code, Cursor, Grok, OpenCode, Antigravity & more.
+Launched 7 Mar 2026 · now v0.1.8 (9 Nov)
+Open source MIT · 55k+ GitHub stars
+Runs on Windows, macOS, Linux, browser, iOS, Android
+Price Free · bring your own subscriptions
+Why I use it
+1
+Limits UI
+What’s left of every Claude & Codex plan, when it resets, across accounts
+2
+Many machines, remote control
+Laptop, server & phone in one sidebar; agents hand work to other machines
+3
+Integrated source control
+Worktrees, diffs, PRs & stacks; it watches a PR until CI is green
+WAISS · #1 · 10.11.2026 61 / 74
+
+### 62 · t3-theo
+
+Show & Tell · Peter Wimberger
+Harness of choice: T3 Code
+Theo Browne
+@theo · t3.gg
+578K subscribers
+Ex-engineer, 2017–2021
+YC alum · T3 Chat
+Has AI psychosis →
+Theo - t3.gg @theo
+To be fair, I haven’t shipped much since Opus 5.5 dropped. […]
+- ts-rust, a complete rewrite of Typescript compiler in Rust […]
+- lust-lang, an alternative toolchain for a subset of rust that compiles 100x faster
+- t3os (private for now), the start of my “perfect os for agents”. Got 5 boxes running it already 😈
+Pretty slow month.
+25 Oct 2026 · 174K views
+WAISS · #1 · 10.11.2026 62 / 74
+
+### 63 · t3-shots
+
+Show & Tell · Peter Wimberger
+Harness of choice: T3 Code
+These slides, made in T3 Code: every project in one sidebar, git on the right
+WAISS · #1 · 10.11.2026 63 / 74
+
+### 64 · t3-demo
+
+Show & Tell · Peter Wimberger
+Harness of choice
+Live demo
+WAISS · #1 · 10.11.2026 64 / 74
+
+## Open round
+
+### 65 · diskussion-tempo
+
+Discussion
+Are the frontier labs pacing themselves?
+Every model in Epoch’s list, 10 Nov 2025 – 10 Nov 2026; filled = new best of that lab. Since April, Anthropic has set a new lab best every 2–7 weeks. Source: epoch.ai/eci
+
+### 66 · frage-dominanz
+
+Open round
+Will OpenAI & Anthropic still dominate in a year?
+
+### 67 · decider
+
+Discussion · Amazon · strandsagents.com, 9 Nov
+Strands Decider
+Amazon runs a decision model in production. Do you use any?
+What it is Picks, doesn’t write State + options in, a probability per option and a confidence out. “A decision model can’t generate text.”
+In production Ticket routing Amazon’s internal ticket system: each ticket to one of 20 labels, replacing Claude Sonnet 4.6. A Gemma 4 E4B build on one A10G GPU.
+Result 98% cheaper $22,200 → $500 per million tickets, 4.2 s → 0.9 s per call: “millions of dollars” a year.
+
+### 68 · frage-agent
+
+Open round
+Would you give a personal agent your inbox?
+
+### 69 · frage-zugang
+
+Open round
+The best models only for selected customers: fair, or a brake on small builders?
+
+### 70 · frage-ipo
+
+Open round
+$1.3 trillion for Anthropic: bubble or justified?
+
+### 71 · frage-rechenzentren
+
+Open round
+Could data centers become a fight in Austria too?
+
+### 72 · frage-neu
+
+Open round
+Which tool or model did you discover this month?
+
+### 73 · tierlist
+
+@SadAlbert10 on X
+
+### 74 · ende
+
+See you next time.
+Telos Circle · Links
+links.teloscircle.com
+Discord
+discord.gg/vjTeFrPsN
+Slides · GitHub
+github.com/topsrek/waiss
+Want to present next time? Talk to Peter .

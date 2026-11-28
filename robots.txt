@@ -1,0 +1,6 @@
+# WAISS – Wiener AI Software Stammtisch. Search engines and AI crawlers are welcome.
+# A short summary for language models: https://waiss.teloscircle.com/llms.txt
+User-agent: *
+Allow: /
+
+Sitemap: https://waiss.teloscircle.com/sitemap.xml

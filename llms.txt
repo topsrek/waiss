@@ -1,0 +1,41 @@
+# WAISS – Wiener AI Software Stammtisch
+
+> WAISS (Wiener AI Software Stammtisch) is a free meetup in Vienna for everyone who builds with AI, about once a month, organized by the nonprofit Telos Circle.
+
+The website and slides are in English; the name is Viennese German ("Stammtisch" = a regular get-together at a
+café table). German: KI-Stammtisch in Wien.
+
+## Facts
+
+- What: a meetup for everyone who builds software with AI
+- Where: Vienna, Austria; the venue is given per edition
+- How often: about once a month
+- Cost: free; registration on Luma
+- Organizer: Telos Circle, a nonprofit in Vienna (https://www.teloscircle.com)
+- Website: https://waiss.teloscircle.com/
+
+## Every edition
+
+1. AI Recap (20 min): What mattered in AI last month
+2. Show & Tell (short talks): Tool tips and your own projects
+3. Open round (open end): Chat, discuss, meet people
+
+## Upcoming
+
+- The next date is announced on the website and on Discord: https://discord.gg/vjTeFrPsN
+
+## Past editions
+
+- WAISS #1: Tuesday 10 November 2026, 18:00 (Vienna time), Café Ritter, Mariahilfer Str. 73, 1060 Wien. Slides: https://waiss.teloscircle.com/1/ (as text: https://waiss.teloscircle.com/1/slides.md)
+
+## Links
+
+- [Website](https://waiss.teloscircle.com/): editions and their slides
+- [Source code and slides on GitHub](https://github.com/topsrek/waiss): present at a future edition by opening a pull request
+- [Discord](https://discord.gg/vjTeFrPsN): community
+- [Telos Circle](https://www.teloscircle.com), [LinkedIn](https://www.linkedin.com/company/telos-circle), [Instagram](https://www.instagram.com/teloscircle), [X](https://x.com/CircleTelos)
+- Contact: events [at] teloscircle.com
+
+## Optional
+
+- [Full text of all slides](https://waiss.teloscircle.com/llms-full.txt)
